@@ -13,7 +13,7 @@ html, body {
   height: 100%;
 }
 section {
-  height: 100%;
+  background-color: #f8f2ee;
 }
 /* ================== REUSABLE PIECES */
 .align-center {
@@ -135,4 +135,46 @@ nav h2:hover::after {
 }
 nav a {
   margin-bottom: 10px;
+}
+
+/* TEST */
+
+.container {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.main-view {
+  position: absolute;
+  overflow: scroll;
+  height: 100%;
+  width: 100%;
+  background-color: #f8f2ee;
+}
+.content {
+  height: 150%;
+  background-color: lightpink;
+}
+.right-view {
+  position: absolute;
+  overflow: scroll;
+  height: 100%;
+  width: 100%;
+  left: 100%;
+  background-color: brown;
+  transition: all .45s ease;
+}
+.bottom-view {
+  position: absolute;
+  overflow: scroll;
+  height: 100%;
+  width: 100%;
+  top: 100%;
+  background-color: skyblue;
+}
+
+.main-pos {
+  left: 0;
+  top: 0;
 }
