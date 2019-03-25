@@ -1,17 +1,8 @@
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
 import './App.css';
 
-class App extends Component {
-  render() {
-    return (
-      <Router>
-        <Route path='/' component={M} />
-      </Router>
-    );
-  }
-}
-
+// Component
 const Nav = (props) => {
   return (
     <nav>
@@ -46,49 +37,61 @@ const About = (props) => {
   return <div>ABOUT</div>;
 }
 
-const SKELETON = [
-  { 
-    name: 'main-view',
-    frames: [
-      { name: 'home', path: '/', exactPath: true, component: Nav },
-    ],
-  },
-  {
-    name: 'right-view',
-    frames: [
-      { name: 'posts', path: '/posts/:query(category|tag|date)?/:keyword?', component: Posts },
-      { name: 'categories', path: '/categories', component: Categories },
-      { name: 'tags',path: '/tags', component: Tags },
-      { name: 'about', path: '/about', component: About },
-    ],
-  },
-  {
-    name: 'bottom-view',
-    frames: [
-      { name: 'post', path: 'posts/:identifier', component: Paper },
-    ],
+const ViewTemplate = {
+  Default: function (props) {
+    return (<div className={props.name}>{props.children}</div>);
   }
-]
-
-
-
-const View = (props) => {
-  return (
-    <section className={props.name}>
-      {props.frames.map( frame => <Frame key={frame.name} path={frame.path} component={frame.component} /> )}
-    </section>
-  );
 }
 
-const Frame = ({name, path, component}) => {
-  const T = component;
-  return <T {...{name, path}} />;
+// Skeleton
+const SKELETON = {
+  views: [
+    { name: 'view-main' },
+    { name: 'view-right' },
+    { name: 'view-bottom' },
+  ],
+  frames: [
+    { name: 'home', path: '/', exactPath: true, component: Nav, in: 'view-main' },
+    { name: 'posts', path: '/posts/:query(category|tag|date)?/:keyword?', component: Posts, in: 'view-right' },
+    { name: 'categories', path: '/categories', component: Categories, in: 'view-right' },
+    { name: 'tags',path: '/tags', component: Tags, in: 'view-right' },
+    { name: 'about', path: '/about', component: About, in: 'view-right' },
+    { name: 'post', path: 'posts/:identifier', component: Paper, in: 'view-bottom' },
+  ],
+};
+
+// Functions to render App
+function draw (skeleton) {
+  const { views, frames } = skeleton;
+  return views.map(view => {
+    const T = !!view.template ? ViewTemplate[view.template] : ViewTemplate.Default;
+    return (
+      <T name={view.name} key={view.name}>
+        {frames.filter(frame => frame.in === view.name)
+          .map(frame => { const C = frame.component; return <C key={frame.name} />; })}
+      </T>
+    );
+  });
 }
 
-const M = () => {
-  return (
-    <div className='container'>{SKELETON.map(view => <View key={view.name} {...view} />)}</div>
-  );
+function hex (skeleton) {
+  return skeleton.frames.map(({ name, path, exactPath }) => <Route exact={!!exactPath} key={name} path={path} component={function () { 
+    const _skeleton = { ...skeleton, frames: skeleton.frames.map(frame => {
+      return frame.name === name ? { ...frame, in: 'view-main' } : frame;
+    })};
+    return draw(_skeleton);
+  }} />);
+}
+
+// App component
+class App extends Component {
+  render() {
+    return (
+      <Router>
+        <Switch>{hex(SKELETON)}</Switch>
+      </Router>
+    );
+  }
 }
 
 export default App;

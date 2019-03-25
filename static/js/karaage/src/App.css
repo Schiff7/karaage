@@ -145,7 +145,7 @@ nav a {
   overflow: hidden;
 }
 
-.main-view {
+.view-main {
   position: absolute;
   overflow: scroll;
   height: 100%;
@@ -156,7 +156,7 @@ nav a {
   height: 150%;
   background-color: lightpink;
 }
-.right-view {
+.view-right {
   position: absolute;
   overflow: scroll;
   height: 100%;
@@ -165,7 +165,7 @@ nav a {
   background-color: brown;
   transition: all .45s ease;
 }
-.bottom-view {
+.view-bottom {
   position: absolute;
   overflow: scroll;
   height: 100%;
