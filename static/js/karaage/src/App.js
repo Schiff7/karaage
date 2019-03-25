@@ -5,7 +5,7 @@ import './App.css';
 // Component
 const Nav = (props) => {
   return (
-    <nav>
+    <nav className={`frame ${props.name}`}>
       <h2 className='align-center' data-text='Hello, World!'><span>{'Hello, World!'}</span></h2>
       <ul className='without-list-style align-center cursor-pointer'>
         <li><Link className='underline' to='/posts'>POSTS</Link></li>
@@ -18,28 +18,28 @@ const Nav = (props) => {
 }
 
 const Paper = (props) => {
-  return <div>PAPER</div>;
+  return <div className={`frame ${props.name}`}>PAPER</div>;
 }
 
 const Posts = (props) => {
-  return <div>POSTS</div>;
+  return <div className={`frame ${props.name}`}>POSTS</div>;
 }
 
 const Categories = (props) => {
-  return <div>CATEGORIES</div>;
+  return <div className={`frame ${props.name}`}>CATEGORIES</div>;
 }
 
 const Tags = (props) => {
-  return <div>TAGS</div>;
+  return <div className={`frame ${props.name}`}>TAGS</div>;
 }
 
 const About = (props) => {
-  return <div>ABOUT</div>;
+  return <div className={`frame ${props.name}`}>ABOUT</div>;
 }
 
 const ViewTemplate = {
   Default: function (props) {
-    return (<div className={props.name}>{props.children}</div>);
+    return (<section className={`view ${props.name}`}>{props.children}</section>);
   }
 }
 
@@ -51,12 +51,12 @@ const SKELETON = {
     { name: 'view-bottom' },
   ],
   frames: [
-    { name: 'home', path: '/', exactPath: true, component: Nav, in: 'view-main' },
-    { name: 'posts', path: '/posts/:query(category|tag|date)?/:keyword?', component: Posts, in: 'view-right' },
-    { name: 'categories', path: '/categories', component: Categories, in: 'view-right' },
-    { name: 'tags',path: '/tags', component: Tags, in: 'view-right' },
-    { name: 'about', path: '/about', component: About, in: 'view-right' },
-    { name: 'post', path: 'posts/:identifier', component: Paper, in: 'view-bottom' },
+    { name: 'frame-home', path: '/', exactPath: true, component: Nav, in: 'view-main' },
+    { name: 'frame-posts', path: '/posts/:query(category|tag|date)?/:keyword?', component: Posts, in: 'view-right' },
+    { name: 'frame-categories', path: '/categories', component: Categories, in: 'view-right' },
+    { name: 'frame-tags',path: '/tags', component: Tags, in: 'view-right' },
+    { name: 'frame-about', path: '/about', component: About, in: 'view-right' },
+    { name: 'frame-post', path: 'posts/:identifier', component: Paper, in: 'view-bottom' },
   ],
 };
 
@@ -68,7 +68,7 @@ function draw (skeleton) {
     return (
       <T name={view.name} key={view.name}>
         {frames.filter(frame => frame.in === view.name)
-          .map(frame => { const C = frame.component; return <C key={frame.name} />; })}
+          .map(frame => { const C = frame.component; return <C name={frame.name} key={frame.name} />; })}
       </T>
     );
   });

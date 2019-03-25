@@ -137,44 +137,27 @@ nav a {
   margin-bottom: 10px;
 }
 
-/* TEST */
-
-.container {
+/* ================= VIEW */
+#root {
   position: relative;
   height: 100%;
   overflow: hidden;
 }
-
-.view-main {
+.view {
   position: absolute;
   overflow: scroll;
   height: 100%;
   width: 100%;
+}
+.view-main {
   background-color: #f8f2ee;
 }
-.content {
-  height: 150%;
-  background-color: lightpink;
-}
 .view-right {
-  position: absolute;
-  overflow: scroll;
-  height: 100%;
-  width: 100%;
   left: 100%;
   background-color: brown;
   transition: all .45s ease;
 }
 .view-bottom {
-  position: absolute;
-  overflow: scroll;
-  height: 100%;
-  width: 100%;
   top: 100%;
   background-color: skyblue;
-}
-
-.main-pos {
-  left: 0;
-  top: 0;
 }
