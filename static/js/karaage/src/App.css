@@ -140,24 +140,12 @@ nav a {
 /* ================= VIEW */
 #root {
   position: relative;
-  height: 100%;
   overflow: hidden;
 }
-.view {
+.frame {
   position: absolute;
   overflow: scroll;
   height: 100%;
   width: 100%;
-}
-.view-main {
-  background-color: #f8f2ee;
-}
-.view-right {
-  left: 100%;
-  background-color: brown;
-  transition: all .45s ease;
-}
-.view-bottom {
-  top: 100%;
-  background-color: skyblue;
+  transition: all .5s ease-in-out;
 }
