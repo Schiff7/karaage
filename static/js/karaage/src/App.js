@@ -19,70 +19,83 @@ const Nav = (props) => {
 }
 
 const Paper = (props) => {
-  return <div>PAPER</div>;
+  return <div>PAPER:{JSON.stringify(props)}</div>;
 }
 
 const Posts = (props) => {
-  return <div>POSTS</div>;
+  return <div>POSTS:{JSON.stringify(props)}</div>;
 }
 
 const Categories = (props) => {
-  return <div>CATEGORIES</div>;
+  return <div>CATEGORIES:{JSON.stringify(props)}</div>;
 }
 
 const Tags = (props) => {
-  return <div>TAGS</div>;
+  return <div>TAGS:{JSON.stringify(props)}</div>;
 }
 
 const About = (props) => {
-  return <div>ABOUT</div>;
+  return <div>ABOUT:{JSON.stringify(props)}</div>;
 }
 
-// Skeleton
-const SKELETON = {
-  views: {
-    main: { left: '0', top: '0' },
-    right: { left: '100%', top: '0' },
-    bottom: { left: '0', top: '100%' },
-  },
-  frames: [
-    { name: 'frame-home', path: '/', exactPath: true, component: Nav, wrapper: 'main' },
-    { name: 'frame-posts', path: '/posts/:query(category|tag|date)?/:keyword?', component: Posts, wrapper: 'right' },
-    { name: 'frame-categories', path: '/categories', component: Categories, wrapper: 'right' },
-    { name: 'frame-tags',path: '/tags', component: Tags, wrapper: 'right' },
-    { name: 'frame-about', path: '/about', component: About, wrapper: 'right' },
-    { name: 'frame-post', path: 'posts/:identifier', component: Paper, wrapper: 'bottom' },
-  ],
-};
-
-const TransitionFrame = (props) => {
-  const { frame, transitionStyles } = props;
+function TransitionFrame (props) {
+  const { is, frame, views, ...rest } = props;
+  const DURATION = 7;
   const C = frame.component;
-  const [inProp, setInProp] = useState(false);
+  // Trigger animation the time mounted.
+  const [ inProp, setInProp ] = useState(false);
   useEffect(() => {
     setInProp(true);
-  }, [inProp])
-  return (
-    <Transition in={inProp} key={frame.name} timeout={100}>
-      {state => <section className={`frame ${frame.name}`} style={{...transitionStyles.entering ,...transitionStyles[state]}}><C /></section>}
-    </Transition>
-  );
+  }, [inProp]);
+  return (is.name !== frame.name
+    ? <section className={`frame ${frame.name}`} style={frame.show ? views['main'] : views[frame['from']]}><C {...rest} /></section>
+    : <Transition in={inProp} timeout={DURATION}>
+        {state => {
+          const defaultStyles = views[is['from']];
+          const transitionStyles = frame.show
+            ? { entering: views[is['from']], entered: views['main'] }
+            : { entering: views['main'], entered: views[is['from']] };
+          return <section className={`frame ${frame.name}`} style={{...defaultStyles, ...transitionStyles[state]}}><C {...rest} /></section>;
+        }}
+      </Transition>)
 }
 
-// Functions to render App
-function Hex ({ skeleton }) {
-  const transitionStyles = { entered: skeleton.views['main'] };
-  return skeleton.frames.map(({ name, path, exactPath }) => <Route key={`route-${name}`} exact={!!exactPath} path={path} component={function () { 
-    return <>{
-      skeleton.frames.map(frame => {
-      const C = frame.component;
-      if (frame.name === name) {
-        transitionStyles.entering = skeleton.views[frame.wrapper];
-        return <TransitionFrame key={frame.name} frame={frame} transitionStyles={transitionStyles} />;
-      }
-      return <section key={frame.name} className={`frame ${frame.name}`} style={skeleton.views[frame.wrapper]}><C /></section>;;
-    })}</>
-  }} />);
+function Machine (props) {
+  const [state, setState] = useState({
+    is: { name: 'frame-home', path: '/', exactPath: true, component: Nav, from: 'main', show: false },
+    views: {
+      main: { left: '0', top: '0' },
+      right: { left: '100%', top: '0' },
+      bottom: { left: '0', top: '100%' },
+    },
+    frames: [
+      { name: 'frame-home', path: '/', exactPath: true, component: Nav, from: 'main', show: true },
+      { name: 'frame-posts', path: '/posts/:query(category|tag|date)?/:keyword?', component: Posts, from: 'right', show: false },
+      { name: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false },
+      { name: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false },
+      { name: 'frame-about', path: '/about', component: About, from: 'right', show: false },
+      { name: 'frame-post', path: 'posts/:identifier', component: Paper, from: 'bottom', show: false },
+    ]
+  });
+  const { is, views, frames } = state;
+  const routes = frames.map(frame => {
+    const alias = frame;
+    return frame.name !== is.name
+      ? (<Route key={frame.name} path={frame.path} exact={!!frame.exactPath} component={
+        function (props) {
+          useEffect(() => { 
+            setState({ ...state, is: frame, frames: frames.map((frame) => frame.name !== alias.name ? frame : { ...frame, show: true }), }); 
+          });
+          return <></>;
+        }
+      }/>)
+      : (<Route key={frame.name} path={frame.path} exact={!!frame.exactPath} render={
+        function (props) {
+          return frames.map(frame => <TransitionFrame key={frame.name} frame={frame} is={is} views={views} {...props} />)
+        }
+      } />);
+  });
+  return <>{routes}</>;
 }
 
 // App component
@@ -90,7 +103,7 @@ class App extends Component {
   render() {
     return (
       <Router>
-        <Switch><Hex skeleton={SKELETON} /></Switch>
+        <Switch><Machine /></Switch>
       </Router>
     );
   }
