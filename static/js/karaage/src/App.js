@@ -19,23 +19,23 @@ const Nav = (props) => {
 }
 
 const Paper = (props) => {
-  return <div>PAPER:{JSON.stringify(props)}</div>;
+  return <div>PAPER</div>;
 }
 
 const Posts = (props) => {
-  return <div>POSTS:{JSON.stringify(props)}</div>;
+  return <div>POSTS</div>;
 }
 
 const Categories = (props) => {
-  return <div>CATEGORIES:{JSON.stringify(props)}</div>;
+  return <div>CATEGORIES</div>;
 }
 
 const Tags = (props) => {
-  return <div>TAGS:{JSON.stringify(props)}</div>;
+  return <div>TAGS</div>;
 }
 
 const About = (props) => {
-  return <div>ABOUT:{JSON.stringify(props)}</div>;
+  return <div>ABOUT</div>;
 }
 
 function TransitionFrame (props) {
@@ -43,7 +43,7 @@ function TransitionFrame (props) {
   const DURATION = 7;
   const C = frame.component;
   // Trigger animation the time mounted.
-  const [ inProp, setInProp ] = useState(false);
+  const [inProp, setInProp] = useState(false);
   useEffect(() => {
     setInProp(true);
   }, [inProp]);
@@ -84,7 +84,13 @@ function Machine (props) {
       ? (<Route key={frame.name} path={frame.path} exact={!!frame.exactPath} component={
         function (props) {
           useEffect(() => { 
-            setState({ ...state, is: frame, frames: frames.map((frame) => frame.name !== alias.name ? frame : { ...frame, show: true }), }); 
+            setState({ 
+              ...state,
+              is: frame, 
+              frames: (frame.name !== 'frame-home'
+                ? frames.map((frame) => frame.name !== alias.name ? frame : { ...frame, show: true })
+                : frames.map((frame) => frame.name === alias.name ? frame : { ...frame, show: false })), 
+            }); 
           });
           return <></>;
         }
