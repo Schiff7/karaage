@@ -1,6 +1,6 @@
 import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
-import { Transition } from 'react-transition-group';
+import { TransitionMotion, spring } from 'react-motion';
 import './App.css';
 
 // Component
@@ -38,70 +38,70 @@ const About = (props) => {
   return <div>ABOUT</div>;
 }
 
-function TransitionFrame (props) {
-  const { is, frame, views, ...rest } = props;
-  const DURATION = 7;
-  const C = frame.component;
-  // Trigger animation the time mounted.
-  const [inProp, setInProp] = useState(false);
-  useEffect(() => {
-    setInProp(true);
-  }, [inProp]);
-  return (is.name !== frame.name
-    ? <section className={`frame ${frame.name}`} style={frame.show ? views['main'] : views[frame['from']]}><C {...rest} /></section>
-    : <Transition in={inProp} timeout={DURATION}>
-        {state => {
-          const defaultStyles = views[is['from']];
-          const transitionStyles = frame.show
-            ? { entering: views[is['from']], entered: views['main'] }
-            : { entering: views['main'], entered: views[is['from']] };
-          return <section className={`frame ${frame.name}`} style={{...defaultStyles, ...transitionStyles[state]}}><C {...rest} /></section>;
-        }}
-      </Transition>)
-}
-
 function Machine (props) {
-  const [state, setState] = useState({
-    is: { name: 'frame-home', path: '/', exactPath: true, component: Nav, from: 'main', show: false },
-    views: {
-      main: { left: '0', top: '0' },
-      right: { left: '100%', top: '0' },
-      bottom: { left: '0', top: '100%' },
-    },
+  const views = {
+    main: { left: 0, top: 0 },
+    right: { left: 100, top: 0 },
+    bottom: { left: 0, top: 0 },
+    opaque: { opacity: 1 },
+    transparent: { opacity: 1 }
+  };
+  const [record, setRecord] = useState({
     frames: [
-      { name: 'frame-home', path: '/', exactPath: true, component: Nav, from: 'main', show: true },
-      { name: 'frame-posts', path: '/posts/:query(category|tag|date)?/:keyword?', component: Posts, from: 'right', show: false },
-      { name: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false },
-      { name: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false },
-      { name: 'frame-about', path: '/about', component: About, from: 'right', show: false },
-      { name: 'frame-post', path: 'posts/:identifier', component: Paper, from: 'bottom', show: false },
-    ]
+      { key: 'frame-home', path: '/', exact: true, component: Nav, from: 'main', show: true },
+      { key: 'frame-posts', path: '/posts', component: Posts, from: 'right', show: false },
+      { key: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false },
+      { key: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false },
+      { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
+      { key: 'frame-paper', path: 'posts/:identifier', component: Paper, from: 'bottom', show: false },
+    ],
+    queue: ['frame-home'],
   });
-  const { is, views, frames } = state;
-  const routes = frames.map(frame => {
-    const alias = frame;
-    return frame.name !== is.name
-      ? (<Route key={frame.name} path={frame.path} exact={!!frame.exactPath} component={
-        function (props) {
-          useEffect(() => { 
-            setState({ 
-              ...state,
-              is: frame, 
-              frames: (frame.name !== 'frame-home'
-                ? frames.map((frame) => frame.name !== alias.name ? frame : { ...frame, show: true })
-                : frames.map((frame) => frame.name === alias.name ? frame : { ...frame, show: false })), 
-            }); 
-          });
-          return <></>;
-        }
-      }/>)
-      : (<Route key={frame.name} path={frame.path} exact={!!frame.exactPath} render={
-        function (props) {
-          return frames.map(frame => <TransitionFrame key={frame.name} frame={frame} is={is} views={views} {...props} />)
-        }
-      } />);
-  });
-  return <>{routes}</>;
+  const { frames, queue } = record;
+  const willLeave = ({ data: { from } }) => {
+    const { left, top } = views[from];
+    return { left: spring(left), top: spring(top), opacity: spring(0) };
+  }
+  const willEnter = ({ data: { from } }) => {
+    return { ...views[from], opacity: 0 };
+  }
+  const getStyles = () => {
+    return frames.filter(frame => frame.show)
+    .map(({ key, ...data }) => ({ key, data, style: { left: spring(0), top: spring(0), opacity: spring(1) }}));
+  }
+  console.log(queue);
+  console.log(frames.filter(frame => frame.key !== queue.slice(-1)[0]));
+  const getRoutes = () => {
+    return frames.filter(frame => frame.key !== queue.slice(-1)[0])
+      .map(frame => <Route key={frame.key} path={frame.path} exact={!!frame.exact} component={() => {
+        const alias = frame;
+        const index = queue.indexOf(frame.key) + 1;
+        useEffect(() => {
+          if (!index) {
+            setRecord({ 
+              frames: frames.map(frame => frame.key !== alias.key ? frame : { ...frame, show: true } ),
+              queue: [ ...queue, frame.key ] 
+            });
+          } else {
+            const next = queue.slice(0, index);
+            setRecord({
+              frames: frames.map(frame => next.includes(frame.key) ? frame : { ...frame, show: false }),
+              queue: next,
+            })
+          }
+        });
+        return <></>;
+      }}/>)
+  }
+  return (
+    <>
+      {getRoutes()}
+      <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles()}>
+        {styles => <>{styles.map(({ key, style, data }) => 
+        <section key={key} className={`frame ${key}`} style={{ left: `${style.left}%`, top: `${style.top}%`, opacity: style.opacity }}><data.component /></section>)}</>}
+      </TransitionMotion>
+    </>
+  );
 }
 
 // App component

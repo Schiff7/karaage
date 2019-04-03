@@ -147,5 +147,5 @@ nav a {
   overflow: scroll;
   height: 100%;
   width: 100%;
-  transition: all .45s ease;
+  border-left: 3px dashed #333;
 }
