@@ -19,11 +19,11 @@ const Nav = (props) => {
 }
 
 const Paper = (props) => {
-  return <div>PAPER</div>;
+  return <div>PAPER{JSON.stringify(props)}<Link to='/'>HOME</Link></div>;
 }
 
 const Posts = (props) => {
-  return <div>POSTS</div>;
+  return <div>POSTS<Link to='/tags'>TAGS</Link><Link to='/paper'>PAPER</Link></div>;
 }
 
 const Categories = (props) => {
@@ -31,20 +31,20 @@ const Categories = (props) => {
 }
 
 const Tags = (props) => {
-  return <div>TAGS</div>;
+  return <div>TAGS<Link to='/'>HOME</Link></div>;
 }
 
 const About = (props) => {
   return <div>ABOUT</div>;
 }
 
-function Machine (props) {
+const Machine = (props) => {
   const views = {
-    main: { left: 0, top: 0 },
-    right: { left: 100, top: 0 },
-    bottom: { left: 0, top: 0 },
+    main: { left: 1, top: 1 },
+    right: { left: 100, top: 1 },
+    bottom: { left: 1, top: 100 },
     opaque: { opacity: 1 },
-    transparent: { opacity: 1 }
+    transparent: { opacity: 0 }
   };
   const [record, setRecord] = useState({
     frames: [
@@ -53,52 +53,59 @@ function Machine (props) {
       { key: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false },
       { key: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false },
       { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
-      { key: 'frame-paper', path: 'posts/:identifier', component: Paper, from: 'bottom', show: false },
+      { key: 'frame-paper', path: '/paper', component: Paper, from: 'bottom', show: false },
     ],
     queue: ['frame-home'],
+    props: {},
   });
   const { frames, queue } = record;
-  const willLeave = ({ data: { from } }) => {
+  const willLeave = ({ data: { from, zIndex } }) => {
     const { left, top } = views[from];
-    return { left: spring(left), top: spring(top), opacity: spring(0) };
+    return { left: spring(left), top: spring(top), opacity: spring(0), zIndex };
   }
   const willEnter = ({ data: { from } }) => {
     return { ...views[from], opacity: 0 };
   }
   const getStyles = () => {
     return frames.filter(frame => frame.show)
-    .map(({ key, ...data }) => ({ key, data, style: { left: spring(0), top: spring(0), opacity: spring(1) }}));
+    .map(({ key, ...data }) => {
+      const zIndex = queue.indexOf(key);
+      return { key, data: { ...data, zIndex }, style: { left: spring(1), top: spring(1), opacity: spring(1) } };
+    });
   }
-  console.log(queue);
-  console.log(frames.filter(frame => frame.key !== queue.slice(-1)[0]));
   const getRoutes = () => {
-    return frames.filter(frame => frame.key !== queue.slice(-1)[0])
-      .map(frame => <Route key={frame.key} path={frame.path} exact={!!frame.exact} component={() => {
+    const actionRoutes = frames.filter(frame => frame.key !== queue.slice(-1)[0])
+      .map(frame => <Route key={frame.key} path={frame.path} exact={!!frame.exact} component={(props) => {
         const alias = frame;
         const index = queue.indexOf(frame.key) + 1;
         useEffect(() => {
           if (!index) {
             setRecord({ 
               frames: frames.map(frame => frame.key !== alias.key ? frame : { ...frame, show: true } ),
-              queue: [ ...queue, frame.key ] 
+              queue: [ ...queue, frame.key ], 
+              props: props,
             });
           } else {
             const next = queue.slice(0, index);
             setRecord({
               frames: frames.map(frame => next.includes(frame.key) ? frame : { ...frame, show: false }),
               queue: next,
+              props: props,
             })
           }
         });
         return <></>;
-      }}/>)
+      }}/>);
+    return actionRoutes;
   }
   return (
     <>
-      {getRoutes()}
+      <Switch>{getRoutes()}</Switch>
       <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles()}>
-        {styles => <>{styles.map(({ key, style, data }) => 
-        <section key={key} className={`frame ${key}`} style={{ left: `${style.left}%`, top: `${style.top}%`, opacity: style.opacity }}><data.component /></section>)}</>}
+        {styles => <>{styles.map(({ key, data, style: { left, top, opacity } }) => 
+        <section key={key} className={`frame ${key}`} style={{ left: `${left}%`, top: `${top}%`, opacity, zIndex: data.zIndex }}>
+          <data.component {...(queue.slice(-1)[0] === key ? record.props : {})} />
+        </section>)}</>}
       </TransitionMotion>
     </>
   );
@@ -108,9 +115,7 @@ function Machine (props) {
 class App extends Component {
   render() {
     return (
-      <Router>
-        <Switch><Machine /></Switch>
-      </Router>
+      <Router><Machine /></Router>
     );
   }
 }
