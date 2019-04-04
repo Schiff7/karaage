@@ -38,6 +38,10 @@ const About = (props) => {
   return <div>ABOUT</div>;
 }
 
+const NoMatch = (props) => {
+  return <div>NO-MATCH</div>;
+}
+
 const Machine = (props) => {
   const views = {
     main: { left: 1, top: 1 },
@@ -54,6 +58,7 @@ const Machine = (props) => {
       { key: 'frame-tags',path: '/tags/:tag?', component: Tags, from: 'right', show: false },
       { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
       { key: 'frame-paper', path: '/paper/:identifier', component: Paper, from: 'bottom', show: false },
+      { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false }
     ],
     queue: ['frame-home'],
     props: {},
@@ -74,28 +79,28 @@ const Machine = (props) => {
     });
   }
   const getRoutes = () => {
-    const actionRoutes = frames.filter(frame => frame.key !== queue.slice(-1)[0])
-      .map(frame => <Route key={frame.key} path={frame.path} exact={!!frame.exact} component={(props) => {
-        const alias = frame;
-        const index = queue.indexOf(frame.key) + 1;
-        useEffect(() => {
-          if (!index) {
-            setRecord({ 
-              frames: frames.map(frame => frame.key !== alias.key ? frame : { ...frame, show: true } ),
-              queue: [ ...queue, frame.key ], 
-              props: props,
-            });
-          } else {
-            const next = queue.slice(0, index);
-            setRecord({
-              frames: frames.map(frame => next.includes(frame.key) ? frame : { ...frame, show: false }),
-              queue: next,
-              props: props,
-            })
-          }
-        });
-        return <></>;
-      }}/>);
+    const actionRoutes = frames.map(frame => <Route key={frame.key} path={frame.path} exact={!!frame.exact} component={(props) => {
+      const alias = frame;
+      const index = queue.indexOf(frame.key) + 1;
+      useEffect(() => {
+        if (queue.slice(-1)[0] === frame.key && frame.show) return;
+        if (!index) {
+          setRecord({ 
+            frames: frames.map(frame => frame.key !== alias.key ? frame : { ...frame, show: true } ),
+            queue: [ ...queue, frame.key ], 
+            props: props,
+          });
+        } else {
+          const next = queue.slice(0, index);
+          setRecord({
+            frames: frames.map(frame => next.includes(frame.key) ? frame : { ...frame, show: false }),
+            queue: next,
+            props: props,
+          })
+        }
+      });
+      return <></>;
+    }}/>);
     return actionRoutes;
   }
   return (
