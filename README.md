@@ -1,16 +1,4 @@
 # karaage
 
-
-
-## Usage
-
-## Installation
-
-## Author
-
-* Hu
-
-## Copyright
-
-Copyright (c) 2019 Hu
+Made of common lisp and javascript.
 
