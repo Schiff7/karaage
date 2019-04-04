@@ -1,6 +1,7 @@
 import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Redirect, Switch, Link } from 'react-router-dom';
 import { TransitionMotion, spring } from 'react-motion';
+import { fromJS, List } from 'immutable';
 import './App.css';
 
 // Component
@@ -50,8 +51,8 @@ const Machine = (props) => {
     opaque: { opacity: 1 },
     transparent: { opacity: 0 }
   };
-  const [record, setRecord] = useState({
-    frames: [
+  const [ record, setRecord ] = useState({
+    frames: fromJS([
       { key: 'frame-home', path: '/', exact: true, component: Nav, from: 'main', show: true },
       { key: 'frame-posts', path: '/posts/:query(category|tag|date|limit)/:keyword', component: Posts, from: 'right', show: false },
       { key: 'frame-categories', path: '/categories/:category?', component: Categories, from: 'right', show: false },
@@ -59,8 +60,8 @@ const Machine = (props) => {
       { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
       { key: 'frame-paper', path: '/paper/:identifier', component: Paper, from: 'bottom', show: false },
       { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false }
-    ],
-    queue: ['frame-home'],
+    ]),
+    queue: List(['frame-home']),
     props: {},
   });
   const { frames, queue } = record;
@@ -72,35 +73,41 @@ const Machine = (props) => {
     return { ...views[from], opacity: 0 };
   }
   const getStyles = () => {
-    return frames.filter(frame => frame.show)
-    .map(({ key, ...data }) => {
-      const zIndex = queue.indexOf(key);
-      return { key, data: { ...data, zIndex }, style: { left: spring(1), top: spring(1), opacity: spring(1) } };
-    });
+    return frames.filter(frame => frame.get('show'))
+      .map(frame => {
+        const key = frame.get('key');
+        const zIndex = queue.indexOf(key);
+        const data = frame.remove('key').merge({zIndex});
+        return { key, data, style: { left: spring(1), top: spring(1), opacity: spring(1) } };
+      }).toJS();
   }
   const getRoutes = () => {
-    const actionRoutes = frames.map(frame => <Route key={frame.key} path={frame.path} exact={!!frame.exact} component={(props) => {
-      const alias = frame;
-      const index = queue.indexOf(frame.key) + 1;
-      useEffect(() => {
-        if (queue.slice(-1)[0] === frame.key && frame.show) return;
-        if (!index) {
-          setRecord({ 
-            frames: frames.map(frame => frame.key !== alias.key ? frame : { ...frame, show: true } ),
-            queue: [ ...queue, frame.key ], 
-            props: props,
-          });
-        } else {
-          const next = queue.slice(0, index);
-          setRecord({
-            frames: frames.map(frame => next.includes(frame.key) ? frame : { ...frame, show: false }),
-            queue: next,
-            props: props,
-          })
-        }
-      });
-      return <></>;
-    }}/>);
+    const actionRoutes = frames.map(frame => 
+      <Route 
+        key={frame.get('key')} 
+        path={frame.get('path')} 
+        exact={!!frame.get('exact')} component={(props) => {
+        const alias = frame;
+        const index = queue.indexOf(frame.get('key')) + 1;
+        useEffect(() => {
+          if (queue.last() === frame.get('key') && frame.get('show')) return;
+          if (!index) {
+            setRecord({ 
+              frames: frames.map(frame => frame.get('key') !== alias.get('key') ? frame : frame.set('show', true)),
+              queue: queue.push(frame.get('key')), 
+              props: props,
+            });
+          } else {
+            const next = queue.slice(0, index);
+            setRecord({
+              frames: frames.map(frame => next.includes(frame.get('key')) ? frame : frame.set('show', false)),
+              queue: next,
+              props: props,
+            });
+          }
+        });
+        return <></>;
+      }}/>);
     return actionRoutes;
   }
   return (
@@ -112,7 +119,7 @@ const Machine = (props) => {
       <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles()}>
         {styles => <>{styles.map(({ key, data, style: { left, top, opacity } }) => 
         <section key={key} className={`frame ${key}`} style={{ left: `${left}%`, top: `${top}%`, opacity, zIndex: data.zIndex }}>
-          <data.component {...(queue.slice(-1)[0] === key ? record.props : {})} />
+          <data.component {...(queue.last() === key ? record.props : {})} />
         </section>)}</>}
       </TransitionMotion>
     </>
