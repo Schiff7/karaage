@@ -1,5 +1,5 @@
 import React, { Component, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Redirect, Switch, Link } from 'react-router-dom';
 import { TransitionMotion, spring } from 'react-motion';
 import './App.css';
 
@@ -10,7 +10,7 @@ const Nav = (props) => {
       <h2 className='align-center' data-text='Hello, World!'><span>{'Hello, World!'}</span></h2>
       <ul className='without-list-style align-center cursor-pointer'>
         <li><Link className='underline' to='/posts'>POSTS</Link></li>
-        <li><Link className='underline' to='/categories'>CAREGORIES</Link></li>
+        <li><Link className='underline' to='/categories'>CATEGORIES</Link></li>
         <li><Link className='underline' to='/tags'>TAGS</Link></li>
         <li><Link className='underline' to='/about'>ABOUT</Link></li>
       </ul>
@@ -23,7 +23,7 @@ const Paper = (props) => {
 }
 
 const Posts = (props) => {
-  return <div>POSTS<Link to='/tags'>TAGS</Link><Link to='/paper'>PAPER</Link></div>;
+  return <div>POSTS<Link to='/tags'>TAGS</Link><Link to='/paper'>PAPER</Link>{JSON.stringify(props)}</div>;
 }
 
 const Categories = (props) => {
@@ -49,11 +49,11 @@ const Machine = (props) => {
   const [record, setRecord] = useState({
     frames: [
       { key: 'frame-home', path: '/', exact: true, component: Nav, from: 'main', show: true },
-      { key: 'frame-posts', path: '/posts', component: Posts, from: 'right', show: false },
-      { key: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false },
-      { key: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false },
+      { key: 'frame-posts', path: '/posts/:query(category|tag|date|limit)/:keyword', component: Posts, from: 'right', show: false },
+      { key: 'frame-categories', path: '/categories/:category?', component: Categories, from: 'right', show: false },
+      { key: 'frame-tags',path: '/tags/:tag?', component: Tags, from: 'right', show: false },
       { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
-      { key: 'frame-paper', path: '/paper', component: Paper, from: 'bottom', show: false },
+      { key: 'frame-paper', path: '/paper/:identifier', component: Paper, from: 'bottom', show: false },
     ],
     queue: ['frame-home'],
     props: {},
@@ -100,7 +100,10 @@ const Machine = (props) => {
   }
   return (
     <>
-      <Switch>{getRoutes()}</Switch>
+      <Switch>
+        <Redirect exact from='/posts' to='/posts/limit/none' />
+        {getRoutes()}
+      </Switch>
       <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles()}>
         {styles => <>{styles.map(({ key, data, style: { left, top, opacity } }) => 
         <section key={key} className={`frame ${key}`} style={{ left: `${left}%`, top: `${top}%`, opacity, zIndex: data.zIndex }}>

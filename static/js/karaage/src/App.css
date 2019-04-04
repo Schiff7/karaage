@@ -144,7 +144,7 @@ nav a {
 }
 .frame {
   position: absolute;
-  overflow: scroll;
+  overflow: auto;
   height: 99%;
   width: 99%;
   border-left: 2px dashed #333;
