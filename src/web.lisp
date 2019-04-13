@@ -26,8 +26,30 @@
 (defroute "/" ()
   (render #P"index.html"))
 
-;;
+;; Retrieve all posts
+(defroute ("/api/posts" :method :GET) ()
+  (render-json 
+    (with-connection (db)
+      (retrieve-all
+        (select :*
+          (from :hu.post))))))
+
+(defroute ("/api/tags" :method :GET) ()
+  (render-json
+    (with-connection (db)
+      (retrieve-all
+        (select :*
+          (from :hu.tag))))))
+
+(defroute ("/api/categories" :method :GET) ()
+  (render-json
+    (with-connection (db)
+      (retrieve-all
+        (select :*
+          (from :hu.category))))))
+
 ;; Error pages
+;; Redirect to 
 
 (defmethod on-exception ((app <web>) (code (eql 404)))
   (declare (ignore app))
