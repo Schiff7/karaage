@@ -8,3 +8,7 @@ Nothing but a simple single page web application.
 * 2019-04-04
 
   Remain to be completed.
+
+* 2019-04-14
+
+  I was always wondering if i need a absolute backend includes web framework and database, now there comes the dicision and I just move all these things out.  
