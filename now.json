@@ -5,10 +5,10 @@
     {
       "src": "app/package.json",
       "use": "@now/static-build",
-      "config": { "distDir": "app/build" }
+      "config": { "distDir": "build" }
     },
     {
-      "src": "/data/*.md",
+      "src": "data/*.md",
       "use": "@now/md"
     }
   ],
@@ -16,21 +16,21 @@
     {
       "src": "/static/(.*)",
       "headers": { "cache-control": "s-maxage=31536000,immutable" },
-      "dest": "/static/$1"
+      "dest": "/app/build/static/$1"
     },
-    { "src": "/favicon.ico", "dest": "/favicon.ico" },
-    { "src": "/asset-manifest.json", "dest": "/asset-manifest.json" },
-    { "src": "/manifest.json", "dest": "/manifest.json" },
-    { "src": "/precache-manifest.(.*)", "dest": "/precache-manifest.$1" },
+    { "src": "/favicon.ico", "dest": "/app/build/favicon.ico" },
+    { "src": "/asset-manifest.json", "dest": "/app/build/asset-manifest.json" },
+    { "src": "/manifest.json", "dest": "/app/build/manifest.json" },
+    { "src": "/precache-manifest.(.*)", "dest": "/app/build/precache-manifest.$1" },
     {
       "src": "/service-worker.js",
       "headers": { "cache-control": "s-maxage=0" },
-      "dest": "/service-worker.js"
+      "dest": "/app/build/service-worker.js"
     },
     {
       "src": "/(.*)",
       "headers": { "cache-control": "s-maxage=0" },
-      "dest": "/index.html"
+      "dest": "/app/build/index.html"
     }
   ]
 }
