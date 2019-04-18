@@ -1,4 +1,3 @@
-#!/bin/bash
 # build karaage
 
-yarn build
+yarn run build
