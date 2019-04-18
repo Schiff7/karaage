@@ -18,19 +18,19 @@
       "headers": { "cache-control": "s-maxage=31536000,immutable" },
       "dest": "/app/static/$1"
     },
-    { "src": "/favicon.ico", "dest": "/app/static/favicon.ico" },
-    { "src": "/asset-manifest.json", "dest": "/app/static/asset-manifest.json" },
-    { "src": "/manifest.json", "dest": "/app/static/manifest.json" },
-    { "src": "/precache-manifest.(.*)", "dest": "/app/static/precache-manifest.$1" },
+    { "src": "/favicon.ico", "dest": "/app/favicon.ico" },
+    { "src": "/asset-manifest.json", "dest": "/app/asset-manifest.json" },
+    { "src": "/manifest.json", "dest": "/app/manifest.json" },
+    { "src": "/precache-manifest.(.*)", "dest": "/app/precache-manifest.$1" },
     {
       "src": "/service-worker.js",
       "headers": { "cache-control": "s-maxage=0" },
-      "dest": "/app/static/service-worker.js"
+      "dest": "/app/service-worker.js"
     },
     {
       "src": "/(.*)",
       "headers": { "cache-control": "s-maxage=0" },
-      "dest": "/app/static/index.html"
+      "dest": "/app/index.html"
     }
   ]
 }
