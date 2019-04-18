@@ -3,7 +3,7 @@
   "name": "karaage",
   "builds": [
     {
-      "src": "package.json",
+      "src": "build.sh",
       "use": "@now/static-build",
       "config": { "distDir": "build" }
     }
