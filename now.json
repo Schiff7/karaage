@@ -2,45 +2,19 @@
   "version": 2,
   "name": "karaage",
   "builds": [
-    {
-      "src": "app/package.json",
-      "use": "@now/static-build",
-      "config": { "distDir": "build" }
-    },
-    {
-      "src": "build.sh",
-      "use": "@now/static-build",
-      "config": { "distDir": "api"}
-    },
-    {
-      "src": "data/*.md",
-      "use": "@now/md"
-    }
+    { "src": "app/package.json", "use": "@now/static-build", "config": { "distDir": "build" } },
+    { "src": "build.sh", "use": "@now/static-build", "config": { "distDir": "build"} },
+    { "src": "data/*.md", "use": "@now/md" }
   ],
   "routes": [
-    {
-      "src": "/data/(.*)",
-      "headers": { "cache-control": "s-maxage=31536000,immutable" },
-      "dest": "/data/$1"
-    },
-    {
-      "src": "/static/(.*)",
-      "headers": { "cache-control": "s-maxage=31536000,immutable" },
-      "dest": "/app/static/$1"
-    },
+    { "src": "/data/(.*)", "headers": { "cache-control": "s-maxage=31536000,immutable" }, "dest": "/data/$1" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/static/(.*)", "headers": { "cache-control": "s-maxage=31536000,immutable" }, "dest": "/app/static/$1" },
     { "src": "/favicon.ico", "dest": "/app/favicon.ico" },
     { "src": "/asset-manifest.json", "dest": "/app/asset-manifest.json" },
     { "src": "/manifest.json", "dest": "/app/manifest.json" },
     { "src": "/precache-manifest.(.*)", "dest": "/app/precache-manifest.$1" },
-    {
-      "src": "/service-worker.js",
-      "headers": { "cache-control": "s-maxage=0" },
-      "dest": "/app/service-worker.js"
-    },
-    {
-      "src": "/(.*)",
-      "headers": { "cache-control": "s-maxage=0" },
-      "dest": "/app/index.html"
-    }
+    { "src": "/service-worker.js", "headers": { "cache-control": "s-maxage=0" }, "dest": "/app/service-worker.js" },
+    { "src": "/(.*)", "headers": { "cache-control": "s-maxage=0" }, "dest": "/app/index.html" }
   ]
 }
