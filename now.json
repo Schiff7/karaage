@@ -8,6 +8,11 @@
       "config": { "distDir": "build" }
     },
     {
+      "src": "build.sh",
+      "use": "@now/static-build",
+      "config": { "distDir": "api"}
+    },
+    {
       "src": "data/*.md",
       "use": "@now/md"
     }
