@@ -1,6 +1,6 @@
 # build karaage
 
-files=`ls data`
+files=`ls ../data`
 prefix="{\n  \"values\": ["
 suffix="\n  ]\n}"
 result=${prefix}
