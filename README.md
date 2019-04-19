@@ -16,3 +16,7 @@ Nothing but a simple single page web application.
 * 2019-04-16
 
   Issue: [styled-components](https://github.com/styled-components) will generate new styles when [react-motion](https://github.com/chenglou/react-motion) animating.
+
+* 2019-04-19
+  
+  Deployed to [Now](https://zeit.co/now).
