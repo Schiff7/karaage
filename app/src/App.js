@@ -2,8 +2,8 @@ import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Redirect, Switch, Link } from 'react-router-dom';
 import { TransitionMotion, spring } from 'react-motion';
 import { fromJS, List } from 'immutable';
-import { mdx } from 'mdx.macro';
 import axios from 'axios';
+import marked from 'marked';
 import './App.css';
 
 // Component
@@ -24,13 +24,13 @@ const Nav = (props) => {
 const Paper = (props) => {
   const [paper, setPaper] = useState('');
   useEffect(() => {
-    axios.get("https://karaage-git-master.zyxwv.now.sh/data/2019-01-28-object-oriented.mdx")
+    axios.get("https://karaage-git-master.zyxwv.now.sh/data/2019-01-28-object-oriented.md")
       .then(function (response) {
         setPaper(response.data);
       });
   }, [paper]);
-  const Doc = mdx`${paper}`;
-  return <div><Doc /></div>;
+  
+  return <div dangerouslySetInnerHTML={{ __html: marked(paper) }}></div>;
 }
 
 const Posts = (props) => {
