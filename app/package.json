@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "axios": "^0.18.0",
     "immutable": "^4.0.0-rc.12",
+    "mdx.macro": "^0.2.8",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
     "react-motion": "^0.5.2",
