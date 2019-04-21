@@ -1,3 +1,5 @@
+[//]: # ("tags": [ "Javascripts", "OOP" ], "category": "Uncategorized")
+
 # 面向对象的实现方式
 
 ## 以类作为模板
@@ -27,7 +29,7 @@ A::bar(&a);
 
 ## 构造函数和原型链
 
-- 什么是`prototype`以及它存在的理由
+关于 `prototype`
 
 ```javascript
 // Javascript
@@ -93,7 +95,7 @@ function _new(constructor, ...params) {
 }
 ```
 
-- 继承的实现
+继承的实现
 
 继承解决的是代码复用和扩展的问题。子类继承父类，子类可以使用父类已经定义好的方法和属性，这实现了复用。子类可以定义父类没有的方法、属性，或者覆盖父类已有的方法或属性，这实现了扩展。
 
