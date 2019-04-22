@@ -1,6 +1,7 @@
 {
   "version": 2,
   "name": "karaage",
+  "alias": "karaage.me",
   "builds": [
     { "src": "app/package.json", "use": "@now/static-build", "config": { "distDir": "build" } },
     { "src": "api/build.sh", "use": "@now/static-build", "config": { "distDir": "build"} },
