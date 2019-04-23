@@ -1,10 +1,100 @@
 import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Redirect, Switch, Link } from 'react-router-dom';
 import { TransitionMotion, spring } from 'react-motion';
-import { fromJS, List } from 'immutable';
+import { fromJS, List, Set, Map } from 'immutable';
 import axios from 'axios';
-import marked from 'marked';
 import './App.css';
+
+/** axios global configuration */
+axios.defaults.baseURL = 'https://karaage-git-master.zyxwv.now.sh';
+
+/** states and mutations */
+const statesAndMutations = fromJS({
+  "posts/tags/categories": [
+    { posts: [], tags: [], categories: [], status: 'init' },
+    function* () {
+      yield { status: 'pending' };
+      try {
+        const response = yield axios.get('/api/posts.json');
+        const posts = fromJS(response.data);
+        console.log(response);
+        const tags = posts.reduce((acc, post) => {
+          return acc.concat(post.tags);
+        }, Set()).toList();
+        const categories = posts.reduce((acc, post) => {
+          return acc.add(post.category);
+        }, Set()).toList();
+        return Map({ posts, tags, categories, status: 'successful' });
+      } catch (e) {
+        yield { status: 'failed', error: e };
+      }
+    }
+  ],
+  "post": [
+    { post: '', status: 'init' },
+    function* (slug) {
+      yield { status: 'pending' };
+      try {
+        const response = yield axios.get(`/data/${slug}.md`);
+        return { post: response.data };
+      } catch (e) {
+        yield { status: 'failed', error: e }
+      }
+    }
+  ]
+});
+
+/** executor of mutation (generator and function) */
+export function executor (gen, send, ...params) {
+  if (gen.constructor.name !== 'GeneratorFunction') {
+    send(gen(...params));
+  } else {
+    const runner = gen(...params);
+    let result = { done: false };
+    let nextArg = undefined;
+    while (!result.done) {
+      result = runner.next(nextArg);
+      if (result.value instanceof Promise) {
+        result.value.then((v) => { nextArg = v; });
+      } else {
+        nextArg = result.value;
+      }
+      send(nextArg);
+    }
+  }
+}
+
+const ImpureContext = React.createContext();
+class ContextWrapper extends Component {
+  constructor (props) {
+    super(props);
+    this.state = {
+      store: statesAndMutations.map(([states, _]) => states)
+    };
+  }
+
+  send = (keyword, states) => {
+    this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) });
+  }
+
+  use = (keyword) => {
+    const mutation = (...params) => executor(
+      statesAndMutations.get(keyword).last(),
+      (states) => this.send(keyword, states),
+      ...params);
+      console.log(this.state);
+    const freshStates = this.state.store.get(keyword);
+    return [freshStates, mutation];
+  }
+
+  render () {
+    return (
+      <ImpureContext.Provider value={{ use: this.use }}>
+        {this.props.children}
+      </ImpureContext.Provider>
+    );
+  }
+}
 
 // Component
 const Nav = (props) => {
@@ -21,20 +111,25 @@ const Nav = (props) => {
   );
 }
 
-const Paper = (props) => {
-  const [paper, setPaper] = useState('');
-  useEffect(() => {
-    axios.get("https://karaage-git-master.zyxwv.now.sh/data/2019-01-28-object-oriented.md")
-      .then(function (response) {
-        setPaper(response.data);
-      });
-  }, [paper]);
-  
-  return <div dangerouslySetInnerHTML={{ __html: marked(paper) }}></div>;
+class Post extends Component {
+  constructor (props) {
+    super(props);
+  };
+  static contextType = ImpureContext;
+  componentDidMount () {
+    console.log(this.props);
+    const [states, mutation] = this.context.use('posts/tags/categories');
+    mutation();
+  }
+  render () {
+    return (
+      <div>POST</div>
+    );
+  }
 }
 
 const Posts = (props) => {
-  return <div>POSTS<Link to='/tags'>TAGS</Link><Link to='/paper'>PAPER</Link>{JSON.stringify(props)}</div>;
+  return <div>POSTS<Link to='/tags'>TAGS</Link><Link to='/post/something'>PAPER</Link>{JSON.stringify(props)}</div>;
 }
 
 const Categories = (props) => {
@@ -68,7 +163,7 @@ const Machine = (props) => {
       { key: 'frame-categories', path: '/categories/:category?', component: Categories, from: 'right', show: false },
       { key: 'frame-tags',path: '/tags/:tag?', component: Tags, from: 'right', show: false },
       { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
-      { key: 'frame-paper', path: '/paper/:identifier', component: Paper, from: 'bottom', show: false },
+      { key: 'frame-post', path: '/post/:identifier', component: Post, from: 'bottom', show: false },
       { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false }
     ]),
     queue: List(['frame-home']),
@@ -126,12 +221,14 @@ const Machine = (props) => {
         <Redirect exact from='/posts' to='/posts/limit/none' />
         {getRoutes()}
       </Switch>
-      <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles()}>
-        {styles => <>{styles.map(({ key, data, style: { left, top, opacity } }) => 
-        <section key={key} className={`frame ${key}`} style={{ left: `${left}%`, top: `${top}%`, opacity, zIndex: data.zIndex }}>
-          <data.component {...(queue.last() === key ? record.props : {})} />
-        </section>)}</>}
-      </TransitionMotion>
+      <ContextWrapper>
+        <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles()}>
+          {styles => <>{styles.map(({ key, data, style: { left, top, opacity } }) => 
+          <section key={key} className={`frame ${key}`} style={{ left: `${left}%`, top: `${top}%`, opacity, zIndex: data.zIndex }}>
+            <data.component {...(queue.last() === key ? record.props : {})} />
+          </section>)}</>}
+        </TransitionMotion>
+      </ContextWrapper>
     </>
   );
 }
