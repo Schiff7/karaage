@@ -10,7 +10,7 @@ axios.defaults.baseURL = 'https://karaage-git-master.zyxwv.now.sh';
 
 /** states and mutations */
 const statesAndMutations = fromJS({
-  "posts/tags/categories": [
+  'posts/tags/categories': [
     { posts: [], tags: [], categories: [], status: 'init' },
     function* () {
       yield { status: 'pending' };
@@ -30,7 +30,7 @@ const statesAndMutations = fromJS({
       }
     }
   ],
-  "post": [
+  'post': [
     { post: '', status: 'init' },
     function* (slug) {
       yield { status: 'pending' };
@@ -46,21 +46,24 @@ const statesAndMutations = fromJS({
 
 /** executor of mutation (generator and function) */
 export function executor (gen, send, ...params) {
+  function next (cont, prev) {
+    const { value, done } = cont.next(prev);
+    if (done) return true;
+    if (value instanceof Promise) {
+      value.then(data => {
+        send(data);
+        next(cont, data);
+      });
+    } else {
+      send(value);
+      next(cont, value);
+    }
+  }
   if (gen.constructor.name !== 'GeneratorFunction') {
     send(gen(...params));
   } else {
-    const runner = gen(...params);
-    let result = { done: false };
-    let nextArg = undefined;
-    while (!result.done) {
-      result = runner.next(nextArg);
-      if (result.value instanceof Promise) {
-        result.value.then((v) => { nextArg = v; });
-      } else {
-        nextArg = result.value;
-      }
-      send(nextArg);
-    }
+    const cont = gen(...params);
+    next(cont, undefined);
   }
 }
 
@@ -82,9 +85,8 @@ class ContextWrapper extends Component {
       statesAndMutations.get(keyword).last(),
       (states) => this.send(keyword, states),
       ...params);
-      console.log(this.state);
-    const freshStates = this.state.store.get(keyword);
-    return [freshStates, mutation];
+    const states = this.state.store.get(keyword);
+    return [states, mutation];
   }
 
   render () {
@@ -112,18 +114,15 @@ const Nav = (props) => {
 }
 
 class Post extends Component {
-  constructor (props) {
-    super(props);
-  };
   static contextType = ImpureContext;
   componentDidMount () {
-    console.log(this.props);
-    const [states, mutation] = this.context.use('posts/tags/categories');
-    mutation();
+    const mutation = this.context.use('post')[1];
+    mutation('work-with-css');
   }
   render () {
+    const states = this.context.use('post')[0];
     return (
-      <div>POST</div>
+      <div>{states.post}</div>
     );
   }
 }
