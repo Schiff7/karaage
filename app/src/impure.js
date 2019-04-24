@@ -14,12 +14,12 @@ const statesAndMutations = fromJS({
       yield { status: 'pending' };
       try {
         const response = yield axios.get('/api/posts.json');
-        const posts = fromJS(response.data);
+        const posts = fromJS(response.data.values);
         const tags = posts.reduce((acc, post) => {
-          return acc.concat(post.tags);
+          return acc.concat(post.get('tags'));
         }, Set()).toList();
         const categories = posts.reduce((acc, post) => {
-          return acc.add(post.category);
+          return acc.add(post.get('category'));
         }, Set()).toList();
         return { posts, tags, categories, status: 'successful' };
       } catch (e) {
@@ -29,10 +29,10 @@ const statesAndMutations = fromJS({
   ],
   'post': [
     { post: '', status: 'init' },
-    function* (slug) {
+    function* (fullName) {
       yield { status: 'pending' };
       try {
-        const response = yield axios.get(`/data/${slug}.md`);
+        const response = yield axios.get(`/data/${fullName}`);
         const post = marked(response.data || '');
         return { post, status: 'successful' };
       } catch (e) {
@@ -44,7 +44,7 @@ const statesAndMutations = fromJS({
 
 /** executor of mutation (generator and function) */
 function executor (gen, send, ...params) {
-  const _send = (v) => send(fromJS(v));
+  const _send = (v) => v ? send(fromJS(v)) : false;
   function next (cont, prev) {
     const { value, done } = cont.next(prev);
     if (done) { _send(value); return; };

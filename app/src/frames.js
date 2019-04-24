@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, PureComponent } from 'react';
 import { Link } from 'react-router-dom';
 import { withEffect } from './impure';
 
@@ -18,12 +18,10 @@ export function Nav (props) {
 }
 
 export const Post = withEffect(function (props) {
-  console.log(props);
+  const { effect } = props;
   useEffect (() => {
-    const effect = props.effect;
     const fetchPost = effect.get('post').last();
     const postsStates = effect.get('posts/tags/categories').first();
-    console.log(postsStates)
     const isPostsFetched = postsStates.get('status');
     if (isPostsFetched !== 'successful') {
       const fetchPosts = effect.get('posts/tags/categories').last();
@@ -34,15 +32,26 @@ export const Post = withEffect(function (props) {
       const fullName = postsStates.get('posts').find(post => post.slug = slug).get('fullName');
       fetchPost(fullName);
     }
-  })
-  const { effect } = props;
+  }, [effect.get('post').first().get('status')]);
   const post = effect.get('post').first().get('post');
   return <div dangerouslySetInnerHTML={{ __html: post }}></div>;
 }, 'post', 'posts/tags/categories');
 
-export const Posts = (props) => {
-  return <div>POSTS<Link to='/tags'>TAGS</Link><Link to='/posts/something'>PAPER</Link>{JSON.stringify(props)}</div>;
-}
+export const Posts = withEffect(class extends PureComponent {
+  componentDidMount () {
+    const fetchPosts = this.props.effect.get('posts/tags/categories').last();
+    fetchPosts();
+  }
+  
+  render () {
+    const posts = this.props.effect.get('posts/tags/categories').first().get('posts');
+    return (
+      <div>
+        <ul>{posts.map(post => <li key={post.get('slug')}><Link to={`/posts/${post.get('slug')}`}>{post.get('slug')}</Link></li>)}</ul>
+      </div>
+    );
+  }
+}, 'posts/tags/categories');
 
 export const Categories = (props) => {
   return <div>CATEGORIES</div>;
