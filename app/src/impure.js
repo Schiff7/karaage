@@ -32,10 +32,9 @@ const statesAndMutations = fromJS({
     function* (fullName) {
       yield { status: 'pending' };
       try {
-        console.log(fullName);
         const response = yield axios.get(`/data/${fullName}`);
         const post = marked(response.data || '');
-        return { post, status: 'successful' };
+        return { fullName, post, status: 'successful' };
       } catch (e) {
         yield { status: 'failed', error: e }
       }
@@ -45,16 +44,15 @@ const statesAndMutations = fromJS({
 
 /** executor of mutation (generator and function) */
 function executor (gen, send, ...params) {
-  const _send = (v) => v ? send(fromJS(v)) : false;
   function next (cont, prev) {
     const { value, done } = cont.next(prev);
-    if (done) { _send(value); return; };
+    if (done) { send(value); return; };
     if (value instanceof Promise) {
       value.then(_value => {
         next(cont, _value);
       });
     } else {
-      _send(value);
+      send(value);
       next(cont, value);
     }
   }
@@ -79,9 +77,7 @@ export class ContextWrapper extends PureComponent {
   }
 
   send = (keyword, states) => {
-    this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) }, () => {
-      console.log(this.state.store.toJS());
-    });
+    this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) });
   }
 
   use = (keyword) => {

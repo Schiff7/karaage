@@ -19,38 +19,42 @@ export function Nav (props) {
 }
 
 export const Post = withEffect(function (props) {
-  const [{ posts, status }, fetchPosts] = props.effect.get('posts/tags/categories').toJS();
-  const [{ post }, fetchPost] = props.effect.get('post').toJS();
+  const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
+  const [s1, m1] = props.effect.get('post').toJS();
   useEffect (() => {
-    if (status === 'init') {
-      fetchPosts();
+    if (s0.status === 'init') {
+      m0();
     } else {
-      if (status === 'successful') {
+      if (s0.status === 'successful') {
         const { match } = props;
         if (!!match) {
           const slug = match.params.identifier;
-          console.log(slug);
-          const fullName = fromJS(posts).find(post => post.slug = slug).get('fullName');
-          fetchPost(fullName);
+          const name = fromJS(s0.posts).find(post => post.get('slug') === slug).get('name');
+          m1(name);
         }
       }
     }
-  });
-  return <div dangerouslySetInnerHTML={{ __html: post }}></div>;
+  }, [s1.name, s0.status]);
+  return (
+    s1.status !== 'successful'
+    ? <div className='loading'>Loading...</div>
+    : <div className='post' dangerouslySetInnerHTML={{ __html: s1.post }}></div>
+  );
 }, 'post', 'posts/tags/categories');
 
 export const Posts = withEffect(function (props) {
-  const [states, fetchPosts] = props.effect.get('posts/tags/categories').toJS();
-  const posts = states.posts;
+  const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
   useEffect(() => {
-    if (states.status === 'init') {
-      fetchPosts();
+    if (s0.status === 'init') {
+      m0();
     }
-  });
+  }, [s0.status]);
   return (
-    <div className="posts">
-      <ul>{posts.map(({ slug }) => <li key={slug}><Link to={`/posts/${slug}`}>{slug}</Link></li>)}</ul>
-    </div>
+    s0.status !== 'successful'
+    ? <div className='loading'>Loading...</div>
+    : <div className='posts'>
+        <ul>{s0.posts.map(({ slug }) => <li key={slug}><Link to={`/posts/${slug}`}>{slug}</Link></li>)}</ul>
+      </div>
   );
 }, 'posts/tags/categories');
 
