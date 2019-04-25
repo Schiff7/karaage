@@ -28,13 +28,13 @@ const statesAndMutations = fromJS({
     }
   ],
   'post': [
-    { post: '', status: 'init' },
-    function* (fullName) {
+    { name: '', post: '', status: 'init' },
+    function* (name) {
       yield { status: 'pending' };
       try {
-        const response = yield axios.get(`/data/${fullName}`);
+        const response = yield axios.get(`/data/${name}`);
         const post = marked(response.data || '');
-        return { fullName, post, status: 'successful' };
+        return { name, post, status: 'successful' };
       } catch (e) {
         yield { status: 'failed', error: e }
       }
