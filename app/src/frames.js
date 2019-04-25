@@ -30,11 +30,12 @@ export const Post = withEffect(function (props) {
         if (!!match) {
           const slug = match.params.identifier;
           const name = fromJS(s0.posts).find(post => post.get('slug') === slug).get('name');
-          m1(name);
+          if (s1.name !== name) m1(name);
         }
       }
     }
-  }, [s1.name, s0.status]);
+  }, [s1.name, s0.status, props.match]);
+  console.log(s0.status + s1.status);
   return (
     s1.status !== 'successful'
     ? <div className='loading'>Loading...</div>

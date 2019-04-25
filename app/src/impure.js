@@ -4,7 +4,7 @@ import axios from 'axios';
 import marked from 'marked';
 
 /** axios global configuration */
-axios.defaults.baseURL = 'https://karaage-git-master.zyxwv.now.sh';
+axios.defaults.baseURL = 'https://karaage.me';
 
 /** states and mutations */
 const statesAndMutations = fromJS({
