@@ -15,7 +15,7 @@ do
   tags_and_category=${tags_and_category#*(}
   tags_and_category=${tags_and_category%)}
   file=${file%\.*}
-  file="{ \"fullName\": \"${full_name}\", \"date\": { \"y\": \"${file:0:4}\", \"m\": \"${file:5:2}\", \"d\": \"${file:8:2}\" }, \"slug\": \"${file:11}\", ${tags_and_category} }"
+  file="{ \"name\": \"${full_name}\", \"date\": { \"y\": \"${file:0:4}\", \"m\": \"${file:5:2}\", \"d\": \"${file:8:2}\" }, \"slug\": \"${file:11}\", ${tags_and_category} }"
   result="${result}\n\t\t${file},"
 done
 result="${result%,}${suffix}"
