@@ -32,6 +32,7 @@ const statesAndMutations = fromJS({
     function* (fullName) {
       yield { status: 'pending' };
       try {
+        console.log(fullName);
         const response = yield axios.get(`/data/${fullName}`);
         const post = marked(response.data || '');
         return { post, status: 'successful' };
@@ -78,7 +79,9 @@ export class ContextWrapper extends PureComponent {
   }
 
   send = (keyword, states) => {
-    this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) });
+    this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) }, () => {
+      console.log(this.state.store.toJS());
+    });
   }
 
   use = (keyword) => {
