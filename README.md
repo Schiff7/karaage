@@ -20,3 +20,8 @@ Nothing but a simple single page web application.
 * 2019-04-19
   
   Deployed to [Now](https://zeit.co/now).
+
+* 2019-04-26
+
+  Run build scripts (react-scripts build) will make `gen.constructor.name !== 'GeneratorFunction'` wrong. The `gen.constructor.name` returned something unknown to me. In place of it `Object.prototype.toString.call(gen)` work well for me.
+
