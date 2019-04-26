@@ -11,7 +11,7 @@ const statesAndMutations = fromJS({
   'posts/tags/categories': [
     { posts: [], tags: [], categories: [], status: 'init' },
     function* () {
-      yield { status: 'pending' };
+      yield Map({ status: 'pending' });
       try {
         const response = yield axios.get('/api/posts.json');
         const posts = fromJS(response.data.values);
@@ -21,9 +21,10 @@ const statesAndMutations = fromJS({
         const categories = posts.reduce((acc, post) => {
           return acc.add(post.get('category'));
         }, Set()).toList();
-        return { posts, tags, categories, status: 'successful' };
+        return Map({ posts, tags, categories, status: 'successful' });
       } catch (e) {
-        yield { status: 'failed', error: e };
+        yield Map({ status: 'failed', error: e });
+        return;
       }
     }
   ],
@@ -34,9 +35,10 @@ const statesAndMutations = fromJS({
       try {
         const response = yield axios.get(`/data/${name}`);
         const post = marked(response.data || '');
-        return { name, post, status: 'successful' };
+        return Map({ name, post, status: 'successful' });
       } catch (e) {
-        yield { status: 'failed', error: e }
+        yield Map({ status: 'failed', error: e });
+        return;
       }
     }
   ]
