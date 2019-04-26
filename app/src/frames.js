@@ -41,6 +41,7 @@ export const Post = withEffect(function (props) {
   const [s1, m1] = props.effect.get('post').toJS();
   useEffect (() => {
     if (s0.status === 'init') {
+      console.log('================= FETCH POSTS');
       m0();
     } else {
       if (s0.status === 'successful') {
@@ -69,7 +70,7 @@ export const Posts = withEffect(function (props) {
   const filterWithUrlParams = (col) => {
     const cat = urlParams.get('category');
     const tag = urlParams.get('tag');
-    return !(cat && tag) ? col : col.filter((item) => item.category === cat || item.tags.includes(tag));
+    return !(cat || tag) ? col : col.filter((item) => item.category === cat || item.tags.includes(tag));
   }
   const posts = filterWithUrlParams(s0.posts);
   useEffect(() => {
@@ -101,7 +102,6 @@ export const Categories = withEffect(function (props) {
       m0();
     }
   }, [s0.status]);
-  console.log(s0);
   return (
     s0.status !== 'successful'
     ? <div className='loading'>Loading...</div>
