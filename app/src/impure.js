@@ -55,7 +55,7 @@ function executor (gen, send, ...params) {
       next(cont, value);
     }
   }
-  if (gen.constructor.name !== 'GeneratorFunction') {
+  if (Object.prototype.toString.call(gen) !== '[object GeneratorFunction]') {
     send(gen(...params));
   } else {
     const cont = gen(...params);
@@ -76,7 +76,6 @@ export class ContextWrapper extends PureComponent {
   }
 
   send = (keyword, states) => {
-    console.log(states.toJS());
     this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) });
   }
 
