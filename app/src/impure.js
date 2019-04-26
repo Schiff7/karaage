@@ -3,9 +3,6 @@ import { fromJS, Set, Map, List } from 'immutable';
 import axios from 'axios';
 import marked from 'marked';
 
-/** axios global configuration */
-axios.defaults.baseURL = 'https://karaage.me';
-
 /** states and mutations */
 const statesAndMutations = fromJS({
   'posts/tags/categories': [
@@ -13,7 +10,7 @@ const statesAndMutations = fromJS({
     function* () {
       yield Map({ status: 'pending' });
       try {
-        const response = yield axios.get('/api/posts.json');
+        const response = yield axios.get('https://karaage.me/api/posts.json');
         const posts = fromJS(response.data.values);
         const tags = posts.reduce((acc, post) => {
           return acc.concat(post.get('tags'));
@@ -31,9 +28,9 @@ const statesAndMutations = fromJS({
   'post': [
     { name: '', post: '', status: 'init' },
     function* (name) {
-      yield { status: 'pending' };
+      yield Map({ status: 'pending' });
       try {
-        const response = yield axios.get(`/data/${name}`);
+        const response = yield axios.get(`https://karaage.me/data/${name}`);
         const post = marked(response.data || '');
         return Map({ name, post, status: 'successful' });
       } catch (e) {
@@ -79,6 +76,7 @@ export class ContextWrapper extends PureComponent {
   }
 
   send = (keyword, states) => {
+    console.log(states.toJS());
     this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) });
   }
 

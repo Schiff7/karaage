@@ -150,12 +150,12 @@ nav a {
   border-left: 2px dashed #333;
   border-top: 2px dashed #333;
 }
-.posts, .loading {
+.categories, .tags, .posts, .about, .no-match, .loading {
   text-transform: uppercase;
   font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 700;
 }
-.posts, .post, .loading {
+.categories, .tags, .posts, .post, .about, .no-match, .loading {
   max-width: 1050px;
   margin: 0 auto;
   padding: 10vh 5vw;

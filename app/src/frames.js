@@ -65,6 +65,13 @@ export const Post = withEffect(function (props) {
 
 export const Posts = withEffect(function (props) {
   const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
+  const urlParams = new URLSearchParams(!props.location ? '' : props.location.search);
+  const filterWithUrlParams = (col) => {
+    const cat = urlParams.get('category');
+    const tag = urlParams.get('tag');
+    return !(cat && tag) ? col : col.filter((item) => item.category === cat || item.tags.includes(tag));
+  }
+  const posts = filterWithUrlParams(s0.posts);
   useEffect(() => {
     if (s0.status === 'init') {
       console.log('================= FETCH POSTS');
@@ -74,24 +81,61 @@ export const Posts = withEffect(function (props) {
   return (
     s0.status !== 'successful'
     ? <div className='loading'>Loading...</div>
-    : <div className='posts'>
-        <ul>{s0.posts.map(({ slug }) => <li key={slug}><Link to={`/posts/${slug}`}>{slug}</Link></li>)}</ul>
-      </div>
+    : <FadeOut>
+        <div className='posts'>
+          <ul>
+            {posts.length === 0
+              ? <li>Nothing here.</li>
+              : posts.map(({ slug }) => <li key={slug}><Link to={`/posts/${slug}`}>{slug}</Link></li>)}
+          </ul>
+        </div>
+      </FadeOut>
   );
 }, 'posts/tags/categories');
 
-export const Categories = (props) => {
-  return <div>CATEGORIES</div>;
-}
+export const Categories = withEffect(function (props) {
+  const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
+  useEffect(() => {
+    if (s0.status === 'init') {
+      console.log('================= FETCH POSTS');
+      m0();
+    }
+  }, [s0.status]);
+  console.log(s0);
+  return (
+    s0.status !== 'successful'
+    ? <div className='loading'>Loading...</div>
+    : <FadeOut>
+        <div className='categories'>
+          <ul>{s0.categories.map(category => <li key={category}><Link to={`/posts?category=${category}`}>{category}</Link></li>)}</ul>
+        </div>
+      </FadeOut>
+  );
+}, 'posts/tags/categories');
 
-export const Tags = (props) => {
-  return <div>TAGS<Link to='/'>HOME</Link></div>;
-}
+export const Tags = withEffect(function (props) {
+  const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
+  useEffect(() => {
+    if (s0.status === 'init') {
+      console.log('================= FETCH POSTS');
+      m0();
+    }
+  }, [s0.status]);
+  return (
+    s0.status !== 'successful'
+    ? <div className='loading'>Loading...</div>
+    : <FadeOut>
+        <div className='tags'>
+          <ul>{s0.tags.map(tag => <li key={tag}><Link to={`/posts?tag=${tag}`}>{tag}</Link></li>)}</ul>
+        </div>
+      </FadeOut>
+  );
+}, 'posts/tags/categories');
 
 export const About = (props) => {
-  return <div>ABOUT</div>;
+  return <div className='about'>UNDER CONSTRUCTION</div>;
 }
 
 export function NoMatch (props) {
-  return <div>NO-MATCH</div>;
+  return <div className='no-match'>NO-MATCH</div>;
 }
