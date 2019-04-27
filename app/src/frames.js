@@ -87,7 +87,7 @@ export const Posts = withEffect(function (props) {
           <ul>
             {posts.length === 0
               ? <li>Nothing here.</li>
-              : posts.map(({ slug }) => <li key={slug}><Link to={`/posts/${slug}`}>{slug}</Link></li>)}
+              : posts.map(({ slug }) => <li key={slug}><Link className="underline" to={`/posts/${slug}`}>{slug}</Link></li>)}
           </ul>
         </div>
       </FadeOut>
@@ -107,7 +107,7 @@ export const Categories = withEffect(function (props) {
     ? <div className='loading'>Loading...</div>
     : <FadeOut>
         <div className='categories'>
-          <ul>{s0.categories.map(category => <li key={category}><Link to={`/posts?category=${category}`}>{category}</Link></li>)}</ul>
+          <ul>{s0.categories.map(category => <li key={category}><Link className="underline" to={`/posts?category=${category}`}>{category}</Link></li>)}</ul>
         </div>
       </FadeOut>
   );
@@ -126,7 +126,7 @@ export const Tags = withEffect(function (props) {
     ? <div className='loading'>Loading...</div>
     : <FadeOut>
         <div className='tags'>
-          <ul>{s0.tags.map(tag => <li key={tag}><Link to={`/posts?tag=${tag}`}>{tag}</Link></li>)}</ul>
+          <ul>{s0.tags.map(tag => <li key={tag}><Link className="underline" to={`/posts?tag=${tag}`}>{tag}</Link></li>)}</ul>
         </div>
       </FadeOut>
   );
