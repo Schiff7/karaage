@@ -2,11 +2,11 @@ import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { TransitionMotion, spring } from 'react-motion';
 import { fromJS, List } from 'immutable';
-import { Nav, Post, Posts, Categories, Tags, About, NoMatch } from './frames';
+import { Nav, Post, Posts, Categories, Tags, About, NoMatch, Loading } from './frames';
 import { ContextWrapper } from './impure';
 import './App.css';
 
-
+// Fundamental component
 const Machine = (props) => {
   const views = {
     main: { left: 1, top: 1 },
@@ -33,8 +33,10 @@ const Machine = (props) => {
     const { left, top } = views[from];
     return { left: spring(left), top: spring(top), opacity: spring(0), zIndex };
   }
+  // Add special key `finished` to predict if the animation has finished, 
+  // which invalid in some situation.
   const willEnter = ({ data: { from } }) => {
-    return { ...views[from], opacity: 0 };
+    return { ...views[from], opacity: 0, finished: 0 };
   }
   const getStyles = () => {
     return frames.filter(frame => frame.get('show'))
@@ -42,7 +44,7 @@ const Machine = (props) => {
         const key = frame.get('key');
         const zIndex = queue.indexOf(key);
         const data = frame.remove('key').merge({zIndex});
-        return { key, data, style: { left: spring(1), top: spring(1), opacity: spring(1) } };
+        return { key, data, style: { left: spring(1), top: spring(1), opacity: spring(1), finished: spring(1) } };
       }).toJS();
   }
   const getRoutes = () => {
@@ -79,9 +81,9 @@ const Machine = (props) => {
       <Switch>{getRoutes()}</Switch>
       <ContextWrapper>
         <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles()}>
-          {styles => <>{styles.map(({ key, data, style: { left, top, opacity } }) => 
+          {styles => <>{styles.map(({ key, data, style: { left, top, opacity, finished } }) => 
           <section key={key} className={`frame ${key}`} style={{ left: `${left}%`, top: `${top}%`, opacity, zIndex: data.zIndex }}>
-            <data.component {...(queue.last() === key ? record.props : {})} />
+            {finished < 1 ? <Loading /> : <data.component {...(queue.last() === key ? record.props : {})} />}
           </section>)}</>}
         </TransitionMotion>
       </ContextWrapper>

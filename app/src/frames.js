@@ -4,7 +4,7 @@ import { fromJS } from 'immutable';
 import { Link } from 'react-router-dom';
 import { withEffect } from './impure';
 
-class FadeOut extends Component {
+export class FadeOut extends Component {
   constructor (props) {
     super(props);
     this.state = { opacity: 0 };
@@ -19,6 +19,10 @@ class FadeOut extends Component {
       </Motion>
     );
   }
+}
+
+export function Loading (props) {
+  return <div className="loading">LOADING...</div>;
 }
 
 // Component
@@ -59,7 +63,7 @@ export const Post = withEffect(function (props) {
   }, [s1.name, s0.status, props.match]);
   return (
     s1.status !== 'successful'
-    ? <div className='loading'>Loading...</div>
+    ? <Loading />
     : <FadeOut><div className='post' dangerouslySetInnerHTML={{ __html: s1.post }}></div></FadeOut>
   );
 }, 'post', 'posts/tags/categories');
@@ -81,7 +85,7 @@ export const Posts = withEffect(function (props) {
   }, [s0.status]);
   return (
     s0.status !== 'successful'
-    ? <div className='loading'>Loading...</div>
+    ? <Loading />
     : <FadeOut>
         <div className='posts'>
           <ul>
@@ -104,7 +108,7 @@ export const Categories = withEffect(function (props) {
   }, [s0.status]);
   return (
     s0.status !== 'successful'
-    ? <div className='loading'>Loading...</div>
+    ? <Loading />
     : <FadeOut>
         <div className='categories'>
           <ul>{s0.categories.map(category => <li key={category}><Link className="underline" to={`/posts?category=${category}`}>{category}</Link></li>)}</ul>
@@ -123,7 +127,7 @@ export const Tags = withEffect(function (props) {
   }, [s0.status]);
   return (
     s0.status !== 'successful'
-    ? <div className='loading'>Loading...</div>
+    ? <Loading />
     : <FadeOut>
         <div className='tags'>
           <ul>{s0.tags.map(tag => <li key={tag}><Link className="underline" to={`/posts?tag=${tag}`}>{tag}</Link></li>)}</ul>
