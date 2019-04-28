@@ -25,3 +25,6 @@ Nothing but a simple single page web application.
 
   Run build scripts (react-scripts build) will make `gen.constructor.name !== 'GeneratorFunction'` wrong. The `gen.constructor.name` returned something unknown to me. In place of it `Object.prototype.toString.call(gen)` work well for me.
 
+* 2019-04-28
+
+  The [immutable-js](https://github.com/immutable-js/immutable-js) makes it hard for me to draw a line between immutable collections and vanilla JS data structure.
