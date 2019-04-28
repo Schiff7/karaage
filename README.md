@@ -1,4 +1,5 @@
 # karaage
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). 
 
 Nothing but a simple single page web application.
@@ -27,4 +28,4 @@ Nothing but a simple single page web application.
 
 * 2019-04-28
 
-  The [immutable-js](https://github.com/immutable-js/immutable-js) makes it hard for me to draw a line between immutable collections and vanilla JS data structure.
+  The [immutable-js](https://github.com/immutable-js/immutable-js) makes it hard for me to draw a line between immutable collections and vanilla JS data structures.
