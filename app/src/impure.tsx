@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react';
 import { fromJS, Set, Map, List } from 'immutable';
 import axios from 'axios';
 import marked from 'marked';
+import { any } from 'prop-types';
 
 axios.defaults.baseURL = 'https://karaage.me';
 
@@ -14,10 +15,10 @@ const statesAndMutations = fromJS({
       try {
         const response = yield axios.get('/api/posts.json');
         const posts = fromJS(response.data.values);
-        const tags = posts.reduce((acc, post) => {
+        const tags = posts.reduce((acc: any, post: any) => {
           return acc.concat(post.get('tags'));
         }, Set()).toList();
-        const categories = posts.reduce((acc, post) => {
+        const categories = posts.reduce((acc: any, post: any) => {
           return acc.add(post.get('category'));
         }, Set()).toList();
         return Map({ posts, tags, categories, status: 'successful' });
@@ -29,7 +30,7 @@ const statesAndMutations = fromJS({
   ],
   'post': [
     { name: '', post: '', status: 'init' },
-    function* (name) {
+    function* (name: any) {
       yield Map({ status: 'pending' });
       try {
         const response = yield axios.get(`/data/${name}`);
@@ -44,8 +45,8 @@ const statesAndMutations = fromJS({
 });
 
 /** executor of mutation (generator and function) */
-function executor (gen, send, ...params) {
-  function next (cont, prev) {
+function executor (gen: any, send: any, ...params: any[]) {
+  function next (cont: any, prev: any) {
     const { value, done } = cont.next(prev);
     if (done) { send(value); return; };
     if (value instanceof Promise) {
@@ -66,26 +67,26 @@ function executor (gen, send, ...params) {
 }
 
 /** create context */
-const ImpureContext = React.createContext();
+const ImpureContext = React.createContext({ store: {}, use: (keyword: string) => List([]) });
 
 /** context wrapper */
-export class ContextWrapper extends PureComponent {
-  constructor (props) {
+export class ContextWrapper extends PureComponent<{}, { store: any, use: (keyword: string) => any }> {
+  constructor (props: any) {
     super(props);
     this.state = {
-      store: statesAndMutations.map(([states, _]) => states),
+      store: statesAndMutations.map(([states, _]: [any, unknown]) => states),
       use: this._use
     };
   }
 
-  send = (keyword, states) => {
+  send = (keyword: string, states: any): void => {
     this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) });
   }
 
-  _use = (keyword) => {
-    const mutation = (...params) => executor(
+  _use = (keyword: string) => {
+    const mutation = (...params: any[]) => executor(
       statesAndMutations.get(keyword).last(),
-      (states) => this.send(keyword, states),
+      (states: any) => this.send(keyword, states),
       ...params);
     const states = this.state.store.get(keyword);
     return List([states, mutation]);
@@ -101,9 +102,9 @@ export class ContextWrapper extends PureComponent {
 }
 
 /** consumer */
-export const withEffect = (component, ...keywords) => {
+export const withEffect = (component: any, ...keywords: string[]) => {
   const Alias = component;
-  return function (props) {
+  return function (props: any) {
     return (
       <ImpureContext.Consumer>
         {({ use }) => {
