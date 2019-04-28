@@ -3,6 +3,8 @@ import { fromJS, Set, Map, List } from 'immutable';
 import axios from 'axios';
 import marked from 'marked';
 
+axios.defaults.baseURL = 'https://karaage.me';
+
 /** states and mutations */
 const statesAndMutations = fromJS({
   'posts/tags/categories': [
@@ -10,7 +12,7 @@ const statesAndMutations = fromJS({
     function* () {
       yield Map({ status: 'pending' });
       try {
-        const response = yield axios.get('https://karaage.me/api/posts.json');
+        const response = yield axios.get('/api/posts.json');
         const posts = fromJS(response.data.values);
         const tags = posts.reduce((acc, post) => {
           return acc.concat(post.get('tags'));
@@ -30,7 +32,7 @@ const statesAndMutations = fromJS({
     function* (name) {
       yield Map({ status: 'pending' });
       try {
-        const response = yield axios.get(`https://karaage.me/data/${name}`);
+        const response = yield axios.get(`/data/${name}`);
         const post = marked(response.data || '');
         return Map({ name, post, status: 'successful' });
       } catch (e) {
@@ -71,7 +73,8 @@ export class ContextWrapper extends PureComponent {
   constructor (props) {
     super(props);
     this.state = {
-      store: statesAndMutations.map(([states, _]) => states)
+      store: statesAndMutations.map(([states, _]) => states),
+      use: this._use
     };
   }
 
@@ -79,7 +82,7 @@ export class ContextWrapper extends PureComponent {
     this.setState({ store: this.state.store.mergeDeep({ [keyword]: states }) });
   }
 
-  use = (keyword) => {
+  _use = (keyword) => {
     const mutation = (...params) => executor(
       statesAndMutations.get(keyword).last(),
       (states) => this.send(keyword, states),
@@ -90,7 +93,7 @@ export class ContextWrapper extends PureComponent {
 
   render () {
     return (
-      <ImpureContext.Provider value={this.use}>
+      <ImpureContext.Provider value={this.state}>
         {this.props.children}
       </ImpureContext.Provider>
     );
@@ -103,7 +106,7 @@ export const withEffect = (component, ...keywords) => {
   return function (props) {
     return (
       <ImpureContext.Consumer>
-        {use => {
+        {({ use }) => {
           const effect = Map(keywords.map(keyword => [keyword, use(keyword)]));
           return <Alias effect={effect} {...props} />
         }}

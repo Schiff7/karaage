@@ -1,4 +1,4 @@
-import React, { Component, useEffect } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import { Motion, spring } from 'react-motion';
 import { fromJS } from 'immutable';
 import { Link } from 'react-router-dom';
@@ -69,18 +69,21 @@ export const Post = withEffect(function (props) {
 }, 'post', 'posts/tags/categories');
 
 export const Posts = withEffect(function (props) {
+  const [posts, setPosts] = useState([]);
   const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
-  const urlParams = new URLSearchParams(!props.location ? '' : props.location.search);
-  const filterWithUrlParams = (col) => {
-    const cat = urlParams.get('category');
-    const tag = urlParams.get('tag');
-    return !(cat || tag) ? col : col.filter((item) => item.category === cat || item.tags.includes(tag));
-  }
-  const posts = filterWithUrlParams(s0.posts);
   useEffect(() => {
     if (s0.status === 'init') {
       console.log('================= FETCH POSTS');
       m0();
+    }
+    if (s0.status === 'successful') {
+      const urlParams = new URLSearchParams(!props.location ? '' : props.location.search);
+      const filterWithUrlParams = (col) => {
+        const cat = urlParams.get('category');
+        const tag = urlParams.get('tag');
+        return !(cat || tag) ? col : col.filter((item) => item.category === cat || item.tags.includes(tag));
+      }
+      setPosts(filterWithUrlParams(s0.posts));
     }
   }, [s0.status]);
   return (
