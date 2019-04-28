@@ -137,11 +137,12 @@ nav a {
   margin-bottom: 10px;
 }
 
-/* ================= VIEW */
+/* ================= ROOT */
 #root {
   position: relative;
   overflow: hidden;
 }
+/* ================= FRAMES */
 .frame {
   position: absolute;
   overflow: auto;
@@ -159,4 +160,21 @@ nav a {
   max-width: 1050px;
   margin: 0 auto;
   padding: 10vh 5vw;
+}
+/* ================= MARKDOWN */
+.post {
+  font-size: 14px;
+}
+pre {
+  margin: .5em 0;
+  padding: .4em .6em;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 2px;
+  background: #f8f8f8;
+  overflow-x: auto;
+}
+
+.code {
+  font-family: Menlo,Monaco,Consolas,"Andale Mono","lucida console","Courier New",monospace;
 }
