@@ -4,13 +4,7 @@ import axios from 'axios';
 import marked from 'marked';
 
 axios.defaults.baseURL = 'https://karaage.me';
-/**
- * TODO: asyncronization and life cycle
- * TODO: seprate async actions and sync ones
- * TODO: add types
- * TODO: immutable-js
- * 
- */
+
 /** states and mutations */
 const statesAndMutations = fromJS({
   'posts/tags/categories': [

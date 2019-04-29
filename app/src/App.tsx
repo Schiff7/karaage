@@ -37,7 +37,7 @@ const Machine = (props: {}) => {
     return { left: spring(left), top: spring(top), opacity: spring(0), zIndex };
   }
   // Add special key `finished` to predict if the animation has finished, 
-  // which invalid in some situation.
+  // maybe crashed.
   const willEnter = ({ data: { from } }: TransitionStyle) => {
     return { ...views[from], opacity: 0, finished: 0 };
   }
