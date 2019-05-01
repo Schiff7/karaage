@@ -1,102 +1,95 @@
-import axios from 'axios';
 import * as R from 'ramda';
 
-/**
- * TODO: async and life cycle
- * TODO: separate async actions and sync ones
- * TODO: add types
- * TODO: ramda
- */
 
-axios.defaults.baseURL = 'https://karaage.me';
-type Post = {
-  name: string;
-  slug: string;
-  date: { y: string; m: string; d: string; };
-  category: string;
-  tags: string[];
-};
-const fetchContent = async (): Promise<Post[]> => {
-  const response = await axios.get('/api/content.json');
-  return response.data;
+interface withEffect {}
+
+
+enum ActionType {
+  WANT = 'WANT',
+  CALL = 'CALL',
+  PUSH = 'PUSH',
 }
 
-const fetchPost = async (name: string): Promise<string> => {
-  const response = await axios.get(`/data/${name}`);
-  return response.data;
+interface ActionInMutation<T> { 
+  type: ActionType; 
+  payload: T
 }
 
-
-const want = (...keywords: string[]): Promise<{}> => (Promise.resolve({}));
-
-type Mutation = ((...args: any[]) => IterableIterator<any>) | ((...args: any[]) => any);
-type StateAndMutation = {
-  keyword: string;
-  state: any;
-  mutation: Mutation;
+interface CreateActionInMutation<P> {
+  (p: P): ActionInMutation<P>;
 }
 
-const content: StateAndMutation = {
-  keyword: 'content',
-  state: [],
-  mutation: function* () {
-    const content = yield fetchContent();
-    return content;
+type WantPayload = { keyword: string; params: any[]; };
+export const want: CreateActionInMutation<WantPayload> = function (p) {
+  return { type: ActionType.WANT, payload: p };
+}
+type CallPayload = { fn: (...params: any[]) => Promise<any>, params: any[] };
+export const call: CreateActionInMutation<CallPayload> = function (p) {
+  return { type: ActionType.CALL, payload: p }; 
+}
+type PushPayload = { state: any }
+export const push: CreateActionInMutation<PushPayload> = function (p) {
+  return { type: ActionType.PUSH, payload: p };
+}
+
+type ActionPayload = WantPayload | CallPayload | PushPayload;
+interface Mutation<T> {
+  (p: T): Iterator<ActionInMutation<ActionPayload>>
+}
+
+interface StateAndMutation<S, M> {
+  key: string;
+  state: S
+  mutation: Mutation<M>;
+}
+
+class Nuts {
+  mutations: Map<string, Mutation<any>>;
+  store: { [key: string]: any } = Object.create(null);
+  stack: string[] = [];
+  constructor (p: StateAndMutation<any, any>[]) {
+    this.mutations = new Map(R.map(({key, mutation}) => [key, mutation], p));
+    p.forEach(({key, state}) => {
+      this.store[key] = state;
+    });
   }
-}
-const post: StateAndMutation = {
-  keyword: 'post',
-  state: '',
-  mutation: function* (slug) {
-    const { content }: { content: Post[] } = yield want('content');
-    const one = R.find(R.propEq('slug', slug), content);
-    const post = one ? fetchPost(one.name): '404';
-    return post;
-  }
-}
-const tags: StateAndMutation = {
-  keyword: 'tags',
-  state: [],
-  mutation: function* () {
-    const { content }: { content: Post[] } = yield want('content');
-    const tags = R.pipe(
-      R.reduce((acc: string[], item: Post) => acc.concat(item.tags))([]),
-      R.dropRepeats
-    )(content);
-    return tags;
-  }
-}
-
-const categories: StateAndMutation = {
-  keyword: 'categories',
-  state: [],
-  mutation: function* () {
-    const { content }: { content: Post[] } = yield want('content');
-    const tags = R.pipe(
-      R.reduce((acc: string[], item: Post) => R.append(item.category, acc))([]),
-      R.dropRepeats
-    )(content);
-    return tags;
-  }
-}
-
-function executor (gen: Mutation, send: (v: any) => void, ...params: any[]) {
-  function next (cont: any, prev: any) {
-    const { value, done } = cont.next(prev);
-    if (done) { send(value); return; };
-    if (value instanceof Promise) {
-      value.then(_value => {
-        next(cont, _value);
-      });
-    } else {
-      send(value);
-      next(cont, value);
+  async _dispatch (this: Nuts, action: ActionInMutation<ActionPayload>) {
+    switch (action.type) {
+      case ActionType.WANT: {
+        const { payload: { keyword, params } } = action as ActionInMutation<WantPayload>;
+        this.execute(keyword, params);
+        break;
+      }
+      case ActionType.CALL: {
+        const { payload: { fn, params } } = action as ActionInMutation<CallPayload>;
+        const result = await R.apply(fn, params);
+        return result;
+      }
+      case ActionType.PUSH: {
+        const { payload: { state } } = action as ActionInMutation<PushPayload>;
+        const keywrod = R.last(this.stack);
+        if (!!keywrod) this.store = R.merge({ [keywrod]: state });
+        this.stack = R.init(this.stack);
+        break;
+      }
+      default: break;
     }
   }
-  if (Object.prototype.toString.call(gen) !== '[object GeneratorFunction]') {
-    send(gen(...params));
-  } else {
-    const cont = gen(...params);
-    next(cont, undefined);
+  _next (this: Nuts, cont: Iterator<ActionInMutation<ActionPayload>>, prev: any): void {
+    const { value, done } = cont.next(prev);
+    if (done) this._dispatch(value);
+    else {
+      this._dispatch(value).then(returned => {
+        this._next(cont, returned);
+      });
+    }
   }
+  execute<T> (keyword: string, p: T): void {
+    this.stack = R.append(keyword, this.stack);
+    const m = this.mutations.get(keyword);
+    if (!m) return;
+    const cont = m(p);
+    this._next(cont, undefined);
+  } 
 }
+
