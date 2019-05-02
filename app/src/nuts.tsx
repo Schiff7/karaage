@@ -1,8 +1,6 @@
+import React from 'react';
+import axios from 'axios';
 import * as R from 'ramda';
-
-
-interface withEffect {}
-
 
 enum ActionType {
   WANT = 'WANT',
@@ -33,8 +31,9 @@ export const push: CreateActionInMutation<PushPayload> = function (p) {
 }
 
 type ActionPayload = WantPayload | CallPayload | PushPayload;
+type MutationEffect = Iterator<ActionInMutation<ActionPayload>> | ActionInMutation<PushPayload>;
 interface Mutation<T> {
-  (p: T): Iterator<ActionInMutation<ActionPayload>>
+  (p: T): MutationEffect;
 }
 
 interface StateAndMutation<S, M> {
@@ -45,20 +44,27 @@ interface StateAndMutation<S, M> {
 
 class Nuts {
   mutations: Map<string, Mutation<any>>;
-  store: { [key: string]: any } = Object.create(null);
+  store: { [key: string]: any } = {};
   stack: string[] = [];
   constructor (p: StateAndMutation<any, any>[]) {
     this.mutations = new Map(R.map(({key, mutation}) => [key, mutation], p));
-    p.forEach(({key, state}) => {
-      this.store[key] = state;
-    });
+    R.forEach(({key, state, mutation}) => {
+      this.store[key] = R.type(mutation) === 'Function' ? state : { ...state, status: Status.INITIAL };
+    }, p);
   }
-  async _dispatch (this: Nuts, action: ActionInMutation<ActionPayload>) {
+  _send = (state: any): void => {
+    const keyword = R.last(this.stack);
+    if (!!keyword) {
+      const prev = this.store[keyword];
+      this.store = { ...this.store, [keyword]: { ...prev, ...state } };
+    }
+  }
+  _dispatch = async (action: ActionInMutation<ActionPayload>) => {
     switch (action.type) {
       case ActionType.WANT: {
         const { payload: { keyword, params } } = action as ActionInMutation<WantPayload>;
-        this.execute(keyword, params);
-        break;
+        await this.run(keyword, params);
+        return;
       }
       case ActionType.CALL: {
         const { payload: { fn, params } } = action as ActionInMutation<CallPayload>;
@@ -67,29 +73,144 @@ class Nuts {
       }
       case ActionType.PUSH: {
         const { payload: { state } } = action as ActionInMutation<PushPayload>;
-        const keywrod = R.last(this.stack);
-        if (!!keywrod) this.store = R.merge({ [keywrod]: state });
-        this.stack = R.init(this.stack);
-        break;
+        this._send(state);
       }
-      default: break;
+      default: return;
     }
   }
-  _next (this: Nuts, cont: Iterator<ActionInMutation<ActionPayload>>, prev: any): void {
+  _next = async (cont: Iterator<ActionInMutation<ActionPayload>>, prev: any) => {
     const { value, done } = cont.next(prev);
-    if (done) this._dispatch(value);
-    else {
-      this._dispatch(value).then(returned => {
-        this._next(cont, returned);
-      });
+    const returned = await this._dispatch(value);
+    if (done) {
+      this.stack = R.init(this.stack);
+      this._send({ status: Status.SUCCESSFUL });
+      return;
     }
+    else await this._next(cont, returned);
   }
-  execute<T> (keyword: string, p: T): void {
+  run = async (keyword: string, p: any) => {
     this.stack = R.append(keyword, this.stack);
+    this._send({ status: Status.PENDING });
     const m = this.mutations.get(keyword);
-    if (!m) return;
+    if (!m) throw Error(`Can not found the keyword ${keyword}`);
     const cont = m(p);
-    this._next(cont, undefined);
+    if ((function (x: MutationEffect): x is ActionInMutation<PushPayload> {
+      return R.type(x) === 'Function';
+    })(cont)) await this._dispatch(cont);
+    else {
+      try {
+        await this._next(cont, undefined);
+      } catch (e) {
+        this._send({ status: Status.ERROR, error: e });
+      }
+    }
+    return;
   } 
 }
+
+interface ContentItem {
+  name: string;
+  date: { y: string; m: string; d: string };
+  category: string;
+  tags: string[];
+  slug: string;
+}
+enum Status {
+  INITIAL = 'INITIAL',
+  PENDING = 'PENDING',
+  SUCCESSFUL = 'SUCCESSFUL',
+  ERROR = 'ERROR',
+}
+
+axios.defaults.baseURL = 'https://karaage.me';
+
+const fetchContent = async (): Promise<ContentItem[]> => {
+  const response = await axios.get('/api/content.json');
+  return response.data;
+}
+
+const fetchPost = async (slug: string): Promise<string> => {
+  const response = await axios.get(`/data/${slug}`);
+  return response.data;
+}
+
+const content: StateAndMutation<{ value: ContentItem[] }, void> = {
+  key: 'content',
+  state: { value: [] },
+  mutation: function* () {
+    const content = yield call({ fn: fetchContent, params: [] });
+    return push({ state: { value: content } });
+  }
+}
+
+const tags: StateAndMutation<{ value: string[] }, void> = {
+  key: 'tags',
+  state: { value: [] },
+  mutation: function* () {
+    const content: ContentItem[] = yield want({ keyword: 'content', params: [] });
+    const tags = R.pipe(
+      R.reduce((acc, item: ContentItem) => R.concat(acc, item.tags), [] as string[]),
+      R.dropRepeats
+    )(content);
+    return push({ state: { value: tags } });
+  }
+}
+
+const categories: StateAndMutation<{ value: string[] }, void> = {
+  key: 'tags',
+  state: { value: [] },
+  mutation: function* () {
+    const content: ContentItem[] = yield want({ keyword: 'content', params: [] });
+    const categories = R.pipe(
+      R.reduce((acc, item: ContentItem) => R.append(item.category, acc), [] as string[]),
+      R.dropRepeats
+    )(content);
+    return push({ state: { value: categories } });
+  }
+}
+
+const post: StateAndMutation<{ value: string }, string> = {
+  key: 'post',
+  state: { value: '' },
+  mutation: function* (slug: string) {
+    const content = yield want({ keyword: 'content', params: [] });
+    const name = R.find(R.propEq('slug', slug), content);
+    const post = yield call({ fn: fetchPost, params: [name] });
+    return push({ state: { value: post } });
+  }
+}
+
+const instance = new Nuts([ content, tags, categories, post ]);
+
+const ImpureContext = React.createContext(instance);
+
+export class ContextWrapper extends React.PureComponent<{}, { context: Nuts }> {
+  constructor (props: {}) {
+    super(props);
+    this.state = {
+      context: instance,
+    };
+  }
+  render () {
+    return (
+      <ImpureContext.Provider value={this.state.context}>
+        {this.props.children}
+      </ImpureContext.Provider>
+    );
+  }
+}
+
+export const withEffect = (component: any) => {
+  const Alias = component;
+  return function (props: any) {
+    return (
+      <ImpureContext.Consumer>
+        {context => <Alias run={context.run} store={context.store} {...props}/>}
+      </ImpureContext.Consumer>
+    );
+  }
+}
+
+
+
 
