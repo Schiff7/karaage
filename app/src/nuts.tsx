@@ -46,6 +46,7 @@ class Nuts {
   mutations: Map<string, Mutation<any>>;
   store: { [key: string]: any } = {};
   stack: string[] = [];
+  diffs: Map<string, any> = new Map();
   constructor (p: StateAndMutation<any, any>[]) {
     this.mutations = new Map(R.map(({key, mutation}) => [key, mutation], p));
     R.forEach(({key, state, mutation}) => {
@@ -64,11 +65,15 @@ class Nuts {
       case ActionType.WANT: {
         const { payload: { keyword, params } } = action as ActionInMutation<WantPayload>;
         await this.run(keyword, params);
-        return;
+        return this.store[keyword];
       }
       case ActionType.CALL: {
         const { payload: { fn, params } } = action as ActionInMutation<CallPayload>;
+        const keyword = R.last(this.stack) as string;
+        const prev = this.diffs.get(keyword);
+        if (R.equals(prev, params)) return this.store[keyword];
         const result = await R.apply(fn, params);
+        this.diffs.set(keyword, params);
         return result;
       }
       case ActionType.PUSH: {
@@ -82,8 +87,8 @@ class Nuts {
     const { value, done } = cont.next(prev);
     const returned = await this._dispatch(value);
     if (done) {
-      this.stack = R.init(this.stack);
       this._send({ status: Status.SUCCESSFUL });
+      this.stack = R.init(this.stack);
       return;
     }
     else await this._next(cont, returned);
@@ -147,11 +152,11 @@ const tags: StateAndMutation<{ value: string[] }, void> = {
   key: 'tags',
   state: { value: [] },
   mutation: function* () {
-    const content: ContentItem[] = yield want({ keyword: 'content', params: [] });
+    const content: { value: ContentItem[] } = yield want({ keyword: 'content', params: [] });
     const tags = R.pipe(
       R.reduce((acc, item: ContentItem) => R.concat(acc, item.tags), [] as string[]),
       R.dropRepeats
-    )(content);
+    )(content.value);
     return push({ state: { value: tags } });
   }
 }
@@ -160,11 +165,11 @@ const categories: StateAndMutation<{ value: string[] }, void> = {
   key: 'tags',
   state: { value: [] },
   mutation: function* () {
-    const content: ContentItem[] = yield want({ keyword: 'content', params: [] });
+    const content: { value: ContentItem[] } = yield want({ keyword: 'content', params: [] });
     const categories = R.pipe(
       R.reduce((acc, item: ContentItem) => R.append(item.category, acc), [] as string[]),
       R.dropRepeats
-    )(content);
+    )(content.value);
     return push({ state: { value: categories } });
   }
 }
@@ -173,8 +178,8 @@ const post: StateAndMutation<{ value: string }, string> = {
   key: 'post',
   state: { value: '' },
   mutation: function* (slug: string) {
-    const content = yield want({ keyword: 'content', params: [] });
-    const name = R.find(R.propEq('slug', slug), content);
+    const content: { value: ContentItem[] } = yield want({ keyword: 'content', params: [] });
+    const name = R.find(R.propEq('slug', slug), content.value);
     const post = yield call({ fn: fetchPost, params: [name] });
     return push({ state: { value: post } });
   }
