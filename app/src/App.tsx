@@ -2,7 +2,7 @@ import React, { Component, useState, useEffect, ReactComponentElement } from 're
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { TransitionMotion, spring, TransitionStyle } from 'react-motion';
 import { Map, List } from 'immutable';
-import { Nav, Post, Posts, Categories, Tags, About, NoMatch, Loading } from './frames';
+import { Nav, Post, Content, Categories, Tags, About, NoMatch, Loading } from './frames';
 import { ContextWrapper } from './impure';
 import './App.css';
 
@@ -21,7 +21,7 @@ const Machine = (props: {}) => {
   ] = useState({
     frames: List([
       Map({ key: 'frame-home', path: '/', exact: true, component: Nav, from: 'main', show: true }),
-      Map({ key: 'frame-posts', path: '/posts', exact: true, component: Posts, from: 'right', show: false }),
+      Map({ key: 'frame-content', path: '/posts', exact: true, component: Content, from: 'right', show: false }),
       Map({ key: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false }),
       Map({ key: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false }),
       Map({ key: 'frame-about', path: '/about', component: About, from: 'right', show: false }),

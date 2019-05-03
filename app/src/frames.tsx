@@ -1,8 +1,7 @@
 import React, { Component, useEffect, useState } from 'react';
 import { Motion, spring, OpaqueConfig } from 'react-motion';
-import { fromJS, List } from 'immutable';
 import { Link } from 'react-router-dom';
-import { withEffect } from './impure';
+import { withEffect, Status } from './impure';
 
 export class FadeOut extends Component<{}, { [key: string]: number | OpaqueConfig }> {
   constructor (props: any) {
@@ -41,108 +40,95 @@ export function Nav (props: any) {
 }
 
 export const Post = withEffect(function (props: any) {
-  const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
-  const [s1, m1] = props.effect.get('post').toJS();
-  useEffect (() => {
-    if (s0.status === 'init') {
-      console.log('================= FETCH POSTS');
-      m0();
-    } else {
-      if (s0.status === 'successful') {
-        const { match } = props;
-        if (!!match) {
-          const slug = match.params.slug;
-          const name = fromJS(s0.posts).find((post: any) => post.get('slug') === slug).get('name');
-          if (s1.name !== name) {
-            console.log('================= FETCH POST');
-            m1(name)
-          };
-        }
-      }
-    }
-  }, [s1.name, s0.status, props.match]);
-  return (
-    s1.status !== 'successful'
-    ? <Loading />
-    : <FadeOut><div className='post' dangerouslySetInnerHTML={{ __html: s1.post }}></div></FadeOut>
-  );
-}, 'post', 'posts/tags/categories');
-
-export const Posts = withEffect(function (props: any) {
-  const [posts, setPosts] = useState([]);
-  const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
+  const { post: { value, slug, status } } = props.store;
   useEffect(() => {
-    if (s0.status === 'init') {
-      console.log('================= FETCH POSTS');
-      m0();
+    const { run, match } = props;
+    if (!!match) run('post', match.params.slug);
+  }, [slug, status]);
+  return (
+    status !== Status.SUCCESSFUL
+    ? <Loading />
+    : <FadeOut><div className='post' dangerouslySetInnerHTML={{ __html: value }}></div></FadeOut>
+  );
+});
+
+export const Content = withEffect(function (props: any) {
+  const { content: { value, status } } = props.store;
+  const [content, setContent] = useState([]);
+  useEffect(() => {
+    if (status === Status.INITIAL) {
+      const { run } = props;
+      run('content');
     }
-    if (s0.status === 'successful') {
+    if (status === Status.SUCCESSFUL) {
+      console.log(111);
       const urlParams = new URLSearchParams(!props.location ? '' : props.location.search);
       const filterWithUrlParams = (col: any) => {
         const cat = urlParams.get('category');
         const tag = urlParams.get('tag');
         return !(cat || tag) ? col : col.filter((item: any) => item.category === cat || item.tags.includes(tag));
       }
-      setPosts(filterWithUrlParams(s0.posts));
+      console.log(value);
+      setContent(filterWithUrlParams(value));
     }
-  }, [s0.status]);
+  }, [status]);
   return (
-    s0.status !== 'successful'
+    status !== Status.SUCCESSFUL
     ? <Loading />
     : <FadeOut>
-        <div className='posts'>
+        <div className='content'>
           <ul>
-            {posts.length === 0
+            {content.length === 0
               ? <li>Nothing here.</li>
-              : posts.map(({ slug }) => <li key={slug}><Link className="underline" to={`/posts/${slug}`}>{slug}</Link></li>)}
+              : content.map(({ slug }: { slug: string }) => <li key={slug}><Link className="underline" to={`/posts/${slug}`}>{slug}</Link></li>)}
           </ul>
         </div>
       </FadeOut>
   );
-}, 'posts/tags/categories');
+});
 
 export const Categories = withEffect(function (props: any) {
-  const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
+  const { categories: { value, status } } = props.store;
   useEffect(() => {
-    if (s0.status === 'init') {
-      console.log('================= FETCH POSTS');
-      m0();
+    if (status === Status.INITIAL) {
+      const { run } = props;
+      run('categories');
     }
-  }, [s0.status]);
+  }, [status]);
   return (
-    s0.status !== 'successful'
+    status !== Status.SUCCESSFUL
     ? <Loading />
     : <FadeOut>
         <div className='categories'>
-          <ul>{s0.categories.map((category: any) => <li key={category}><Link className="underline" to={`/posts?category=${category}`}>{category}</Link></li>)}</ul>
+          <ul>{value.map((category: any) => <li key={category}><Link className="underline" to={`/posts?category=${category}`}>{category}</Link></li>)}</ul>
         </div>
       </FadeOut>
   );
-}, 'posts/tags/categories');
+});
 
 export const Tags = withEffect(function (props: any) {
-  const [s0, m0] = props.effect.get('posts/tags/categories').toJS();
+  const { tags: { value, status } } = props.store;
   useEffect(() => {
-    if (s0.status === 'init') {
-      console.log('================= FETCH POSTS');
-      m0();
+    if (status === Status.INITIAL) {
+      const { run } = props;
+      run('tags');
     }
-  }, [s0.status]);
+  }, [status]);
   return (
-    s0.status !== 'successful'
+    status !== Status.SUCCESSFUL
     ? <Loading />
     : <FadeOut>
         <div className='tags'>
-          <ul>{s0.tags.map((tag: any) => <li key={tag}><Link className="underline" to={`/posts?tag=${tag}`}>{tag}</Link></li>)}</ul>
+          <ul>{value.map((category: any) => <li key={category}><Link className="underline" to={`/posts?tags=${category}`}>{category}</Link></li>)}</ul>
         </div>
       </FadeOut>
   );
-}, 'posts/tags/categories');
+});
 
 export const About = (props: any) => {
   return <div className='about'>UNDER CONSTRUCTION</div>;
 }
 
-export function NoMatch (props: any) {
+export const NoMatch = function (props: any) {
   return <div className='no-match'>NO-MATCH</div>;
-}
+};
