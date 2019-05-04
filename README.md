@@ -29,3 +29,12 @@ Nothing but a simple single page web application.
 * 2019-04-28
 
   The [immutable-js](https://github.com/immutable-js/immutable-js) makes it hard for me to draw a line between immutable collections and vanilla JS data structures.
+
+* 2019-05-05
+
+  TODO:
+
+  1. Handle url search parameter.
+  2. Remove immutableJS?
+  3. Add comment.
+  4. Type.
