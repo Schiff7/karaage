@@ -1,6 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import * as R from 'ramda';
+import marked from 'marked';
 
 enum ActionType {
   WANT = 'WANT',
@@ -47,6 +48,7 @@ class Nuts {
   store: { [key: string]: any } = {};
   stack: string[] = [];
   diffs: Map<string, any> = new Map();
+  listener: Map<string, ((store: { [key: string]: any }) => void)> = new Map();
   constructor (p: StateAndMutation<any, any>[]) {
     this.mutations = new Map(R.map(({key, mutation}) => [key, mutation], p));
     R.forEach(({key, state, mutation}) => {
@@ -60,6 +62,7 @@ class Nuts {
       this.store = { ...this.store, [keyword]: { ...prev, ...state } };
       console.log(this.store);
     }
+    this._notify();
   }
   _dispatch = async (action: ActionInMutation<ActionPayload>) => {
     switch (action.type) {
@@ -70,11 +73,7 @@ class Nuts {
       }
       case ActionType.CALL: {
         const { payload: { fn, params } } = action as ActionInMutation<CallPayload>;
-        const keyword = R.last(this.stack) as string;
-        const prev = this.diffs.get(keyword);
-        if (R.equals(prev, params)) return this.store[keyword];
         const result = await R.apply(fn, params);
-        this.diffs.set(keyword, params);
         return result;
       }
       case ActionType.PUSH: {
@@ -95,7 +94,12 @@ class Nuts {
     else await this._next(cont, returned);
   }
   run = async (keyword: string, p: any) => {
+
+    const diff = this.diffs.get(keyword);
+    if (diff && R.equals(diff, p)) return;
+
     this.stack = R.append(keyword, this.stack);
+    this.diffs.set(keyword, p);
     this._send({ status: Status.PENDING });
     const m = this.mutations.get(keyword);
     if (!m) throw Error(`Can not found the keyword ${keyword}`);
@@ -111,7 +115,18 @@ class Nuts {
       }
     }
     return;
+  }
+  subscribe = (name: string, fn: ((store: { [key: string]: any }) => void)) => {
+    this.listener.set(name, fn);
   } 
+  unsubscribe = (name: string) => {
+    this.listener.delete(name);
+  }
+  _notify = () => {
+    this.listener.forEach((fn, _) => {
+      fn(this.store);
+    });
+  }
 }
 
 interface ContentItem {
@@ -137,7 +152,7 @@ const fetchContent = async (): Promise<ContentItem[]> => {
 
 const fetchPost = async (slug: string): Promise<string> => {
   const response = await axios.get(`/data/${slug}`);
-  return response.data;
+  return marked(response.data);
 }
 
 const content: StateAndMutation<{ value: ContentItem[] }, void> = {
@@ -163,7 +178,7 @@ const tags: StateAndMutation<{ value: string[] }, void> = {
 }
 
 const categories: StateAndMutation<{ value: string[] }, void> = {
-  key: 'tags',
+  key: 'categories',
   state: { value: [] },
   mutation: function* () {
     const content: { value: ContentItem[] } = yield want({ keyword: 'content', params: [] });
@@ -188,18 +203,27 @@ const post: StateAndMutation<{ value: string, slug: string }, string> = {
 
 const instance = new Nuts([ content, tags, categories, post ]);
 
-const ImpureContext = React.createContext(instance);
+const ImpureContext = React.createContext({ store: {}, run: instance.run });
 
-export class ContextWrapper extends React.PureComponent<{}, { context: Nuts }> {
+interface ContextWrapperState {
+  store: { [key: string]: any };
+}
+export class ContextWrapper extends React.PureComponent<{}, ContextWrapperState> {
   constructor (props: {}) {
     super(props);
+    instance.subscribe('wrapper', this.callBack);
     this.state = {
-      context: instance,
+      store: instance.store
     };
   }
+
+  callBack = (store: { [key: string]: any }) => {
+    this.setState({ store });
+  }
+  
   render () {
     return (
-      <ImpureContext.Provider value={this.state.context}>
+      <ImpureContext.Provider value={{ store: this.state.store, run: instance.run }}>
         {this.props.children}
       </ImpureContext.Provider>
     );

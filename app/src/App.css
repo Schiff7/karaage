@@ -151,12 +151,12 @@ nav a {
   border-left: 2px dashed #333;
   border-top: 2px dashed #333;
 }
-.categories, .tags, .posts, .about, .no-match, .loading {
+.categories, .tags, .content, .about, .no-match, .loading {
   text-transform: uppercase;
   font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 700;
 }
-.categories, .tags, .posts, .post, .about, .no-match, .loading {
+.categories, .tags, .content, .post, .about, .no-match, .loading {
   max-width: 1050px;
   margin: 0 auto;
   padding: 10vh 5vw;

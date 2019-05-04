@@ -40,15 +40,15 @@ export function Nav (props: any) {
 }
 
 export const Post = withEffect(function (props: any) {
-  const { post: { value, slug, status } } = props.store;
+  const { post } = props.store;
   useEffect(() => {
     const { run, match } = props;
     if (!!match) run('post', match.params.slug);
-  }, [slug, status]);
+  }, [post.slug, post.status, props.slug]);
   return (
-    status !== Status.SUCCESSFUL
+    post.status !== Status.SUCCESSFUL
     ? <Loading />
-    : <FadeOut><div className='post' dangerouslySetInnerHTML={{ __html: value }}></div></FadeOut>
+    : <FadeOut><div className='post' dangerouslySetInnerHTML={{ __html: post.value }}></div></FadeOut>
   );
 });
 
@@ -61,17 +61,16 @@ export const Content = withEffect(function (props: any) {
       run('content');
     }
     if (status === Status.SUCCESSFUL) {
-      console.log(111);
       const urlParams = new URLSearchParams(!props.location ? '' : props.location.search);
       const filterWithUrlParams = (col: any) => {
         const cat = urlParams.get('category');
-        const tag = urlParams.get('tag');
+        const tag = urlParams.get('tags');
         return !(cat || tag) ? col : col.filter((item: any) => item.category === cat || item.tags.includes(tag));
       }
-      console.log(value);
       setContent(filterWithUrlParams(value));
     }
   }, [status]);
+
   return (
     status !== Status.SUCCESSFUL
     ? <Loading />
