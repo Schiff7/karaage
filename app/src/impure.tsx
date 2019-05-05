@@ -2,6 +2,7 @@ import React from 'react';
 import axios from 'axios';
 import * as R from 'ramda';
 import marked from 'marked';
+import { RouteComponentProps } from 'react-router';
 
 enum ActionType {
   WANT = 'WANT',
@@ -129,7 +130,7 @@ class Nuts {
   }
 }
 
-interface ContentItem {
+export interface ContentItem {
   name: string;
   date: { y: string; m: string; d: string };
   category: string;
@@ -232,7 +233,7 @@ export class ContextWrapper extends React.PureComponent<{}, ContextWrapperState>
 
 export const withEffect = (component: any) => {
   const Alias = component;
-  return function (props: any) {
+  return function (props: RouteComponentProps) {
     return (
       <ImpureContext.Consumer>
         {context => <Alias run={context.run} store={context.store} {...props}/>}

@@ -1,15 +1,15 @@
-import React, { Component, useEffect, useState } from 'react';
-import { Motion, spring, OpaqueConfig } from 'react-motion';
-import { Link } from 'react-router-dom';
-import { withEffect, Status } from './impure';
+import React, { Component, useEffect, useState, ReactElement } from 'react';
+import { Motion, spring, Style } from 'react-motion';
+import { Link, RouteComponentProps } from 'react-router-dom';
+import { withEffect, Status, ContentItem } from './impure';
 
-export class FadeOut extends Component<{}, { [key: string]: number | OpaqueConfig }> {
-  constructor (props: any) {
+export class FadeOut extends Component<{}, Style> {
+  constructor (props: {}) {
     super(props);
     this.state = { opacity: 0 };
   }
   componentDidMount () {
-    this.setState({ opacity: spring(1, { stiffness: 60, damping: 15 }) });
+    this.setState({ opacity: spring(1) });
   }
   render () {
     return (
@@ -20,12 +20,18 @@ export class FadeOut extends Component<{}, { [key: string]: number | OpaqueConfi
   }
 }
 
-export function Loading (props: any) {
+export function Loading () {
   return <div className="loading">LOADING...</div>;
 }
 
+export function MaybeLoading (props: { predict: boolean; children: ReactElement }) {
+  return props.predict ? <FadeOut>{props.children}</FadeOut> : <Loading />;
+}
+
+type FrameProp<T> = RouteComponentProps<T> & { run: (keyword: string, params?: any) => void, store: { [key: string]: any } };
+
 // Component
-export function Nav (props: any) {
+export function Nav () {
   return (
     <nav>
       <h2 className='align-center' data-text='Hello, World!'><span>{'Hello, World!'}</span></h2>
@@ -39,54 +45,60 @@ export function Nav (props: any) {
   );
 }
 
-export const Post = withEffect(function (props: any) {
-  const { post } = props.store;
+export const Post = withEffect(function (props: FrameProp<{ slug?: string }>) {
+  const { post: { value, status } } = props.store;
+  const slug = props.match && props.match.params.slug; 
   useEffect(() => {
-    const { run, match } = props;
-    if (!!match) run('post', match.params.slug);
-  }, [post.slug, post.status, props.slug]);
+    const { run } = props;
+    if (!!slug) run('post', slug);
+  }, [slug, status]);
   return (
-    post.status !== Status.SUCCESSFUL
-    ? <Loading />
-    : <FadeOut><div className='post' dangerouslySetInnerHTML={{ __html: post.value }}></div></FadeOut>
+    <MaybeLoading predict={status === Status.SUCCESSFUL}>
+      <div className='post' dangerouslySetInnerHTML={{ __html: value }}></div>
+    </MaybeLoading>
   );
 });
 
-export const Content = withEffect(function (props: any) {
+export const Content = withEffect(function (props: FrameProp<{}>) {
   const { content: { value, status } } = props.store;
-  const [content, setContent] = useState([]);
+  const [content, setContent] = useState([] as ContentItem[]);
   useEffect(() => {
     if (status === Status.INITIAL) {
       const { run } = props;
       run('content');
     }
     if (status === Status.SUCCESSFUL) {
-      const urlParams = new URLSearchParams(!props.location ? '' : props.location.search);
-      const filterWithUrlParams = (col: any) => {
+      const urlParams = new URLSearchParams(props.location ? props.location.search : '');
+      const filterWithUrlParams = (col: ContentItem[]) => {
         const cat = urlParams.get('category');
+        col = !cat ? col : col.filter((item) => item.category === cat);
         const tag = urlParams.get('tags');
-        return !(cat || tag) ? col : col.filter((item: any) => item.category === cat || item.tags.includes(tag));
+        col = !tag ? col : col.filter((item) => item.tags.includes(tag));
+        const date = urlParams.get('date');
+        col = !date ? col : col.filter((item) => {
+          const fullDate: string = item.date.y + item.date.m + item.date.d;
+          return fullDate.includes(date);
+        })
+        return col;
       }
       setContent(filterWithUrlParams(value));
     }
   }, [status]);
 
   return (
-    status !== Status.SUCCESSFUL
-    ? <Loading />
-    : <FadeOut>
-        <div className='content'>
-          <ul>
-            {content.length === 0
-              ? <li>Nothing here.</li>
-              : content.map(({ slug }: { slug: string }) => <li key={slug}><Link className="underline" to={`/posts/${slug}`}>{slug}</Link></li>)}
-          </ul>
-        </div>
-      </FadeOut>
+    <MaybeLoading predict={status === Status.SUCCESSFUL}>
+      <div className='content'>
+        <ul>
+          {content.length === 0
+            ? <li>Nothing here.</li>
+            : content.map(({ slug }: { slug: string }) => <li key={slug}><Link className="underline" to={`/posts/${slug}`}>{slug}</Link></li>)}
+        </ul>
+      </div>
+    </MaybeLoading>
   );
 });
 
-export const Categories = withEffect(function (props: any) {
+export const Categories = withEffect(function (props: FrameProp<{}>) {
   const { categories: { value, status } } = props.store;
   useEffect(() => {
     if (status === Status.INITIAL) {
@@ -95,17 +107,15 @@ export const Categories = withEffect(function (props: any) {
     }
   }, [status]);
   return (
-    status !== Status.SUCCESSFUL
-    ? <Loading />
-    : <FadeOut>
-        <div className='categories'>
-          <ul>{value.map((category: any) => <li key={category}><Link className="underline" to={`/posts?category=${category}`}>{category}</Link></li>)}</ul>
-        </div>
-      </FadeOut>
+    <MaybeLoading predict={status === Status.SUCCESSFUL}>
+      <div className='categories'>
+        <ul>{value.map((category: string) => <li key={category}><Link className="underline" to={`/posts?category=${category}`}>{category}</Link></li>)}</ul>
+      </div>
+    </MaybeLoading>
   );
 });
 
-export const Tags = withEffect(function (props: any) {
+export const Tags = withEffect(function (props: FrameProp<{}>) {
   const { tags: { value, status } } = props.store;
   useEffect(() => {
     if (status === Status.INITIAL) {
@@ -114,20 +124,18 @@ export const Tags = withEffect(function (props: any) {
     }
   }, [status]);
   return (
-    status !== Status.SUCCESSFUL
-    ? <Loading />
-    : <FadeOut>
-        <div className='tags'>
-          <ul>{value.map((category: any) => <li key={category}><Link className="underline" to={`/posts?tags=${category}`}>{category}</Link></li>)}</ul>
-        </div>
-      </FadeOut>
+    <MaybeLoading predict={status === Status.SUCCESSFUL}>
+      <div className='tags'>
+        <ul>{value.map((tag: string) => <li key={tag}><Link className="underline" to={`/posts?tags=${tag}`}>{tag}</Link></li>)}</ul>
+      </div>
+    </MaybeLoading>
   );
 });
 
-export const About = (props: any) => {
+export function About () {
   return <div className='about'>UNDER CONSTRUCTION</div>;
 }
 
-export const NoMatch = function (props: any) {
+export function NoMatch () {
   return <div className='no-match'>NO-MATCH</div>;
 };

@@ -1,13 +1,21 @@
 import React, { Component, useState, useEffect, ReactComponentElement } from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, RouteComponentProps } from 'react-router-dom';
 import { TransitionMotion, spring, TransitionStyle } from 'react-motion';
-import { Map, List } from 'immutable';
 import { Nav, Post, Content, Categories, Tags, About, NoMatch, Loading } from './frames';
 import { ContextWrapper } from './impure';
+import * as R from 'ramda';
 import './App.css';
 
+interface FrameItem {
+  key: string;
+  component: any;
+  from: string;
+  show: boolean;
+  path: string | undefined;
+  exact?: boolean;
+}
 // Fundamental component
-const Machine = (props: {}) => {
+const Machine = () => {
   const views: { [key: string]: { [key: string]: number } } = {
     main: { left: 1, top: 1 },
     right: { left: 100, top: 1 },
@@ -16,19 +24,19 @@ const Machine = (props: {}) => {
     transparent: { opacity: 0 }
   };
   const [ record, setRecord ]: [
-    { frames: List<any>, queue: List<string>, props: object },
+    { frames: FrameItem[], queue: string[], props: {} },
     (record: any) => void
   ] = useState({
-    frames: List([
-      Map({ key: 'frame-home', path: '/', exact: true, component: Nav, from: 'main', show: true }),
-      Map({ key: 'frame-content', path: '/posts', exact: true, component: Content, from: 'right', show: false }),
-      Map({ key: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false }),
-      Map({ key: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false }),
-      Map({ key: 'frame-about', path: '/about', component: About, from: 'right', show: false }),
-      Map({ key: 'frame-post', path: '/posts/:slug', component: Post, from: 'bottom', show: false }),
-      Map({ key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false })
-    ]),
-    queue: List(['frame-home']),
+    frames: [
+      { key: 'frame-home', path: '/', exact: true, component: Nav, from: 'main', show: true },
+      { key: 'frame-content', path: '/posts', exact: true, component: Content, from: 'right', show: false },
+      { key: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false },
+      { key: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false },
+      { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
+      { key: 'frame-post', path: '/posts/:slug', component: Post, from: 'bottom', show: false },
+      { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false }
+    ],
+    queue: ['frame-home'],
     props: {},
   });
   const { frames, queue } = record;
@@ -41,35 +49,39 @@ const Machine = (props: {}) => {
   const willEnter = ({ data: { from } }: TransitionStyle) => {
     return { ...views[from], opacity: 0, finished: 0 };
   }
+
   const getStyles = (): TransitionStyle[] => {
-    return frames.filter(frame => frame.get('show'))
-      .map(frame => {
-        const key = frame.get('key');
+    const styles = R.pipe(
+      R.filter((frame: FrameItem) => frame.show),
+      R.map((frame: FrameItem) => {
+        const { key } = frame;
         const zIndex = queue.indexOf(key);
-        const data = frame.remove('key').merge({zIndex});
+        const data = R.pipe(R.dissoc('key'), R.merge({zIndex}))(frame);
         return { key, data, style: { left: spring(1), top: spring(1), opacity: spring(1), finished: spring(1) } };
-      }).toJS();
+      })
+    )(frames);
+    return styles as TransitionStyle[];
   }
   const getRoutes = () => {
-    const actionRoutes = frames.map(frame => 
+    const actionRoutes = frames.map((frame: FrameItem) => 
       <Route 
-        key={frame.get('key')} 
-        path={frame.get('path')} 
-        exact={!!frame.get('exact')} component={(props: any) => {
+        key={frame.key} 
+        path={frame.path} 
+        exact={!!frame.exact} component={(props: RouteComponentProps) => {
         const alias = frame;
-        const index = queue.indexOf(frame.get('key')) + 1;
+        const index = queue.indexOf(frame.key) + 1;
         useEffect(() => {
-          if (queue.last() === frame.get('key') && frame.get('show')) return;
+          if (R.last(queue) === frame.key && frame.show) return;
           if (!index) {
             setRecord({ 
-              frames: frames.map(frame => frame.get('key') !== alias.get('key') ? frame : frame.set('show', true)),
-              queue: queue.push(frame.get('key')), 
+              frames: frames.map((frame: FrameItem) => frame.key !== alias.key ? frame : R.assoc('show', true, frame)),
+              queue: R.append(frame.key, queue), 
               props: props,
             });
           } else {
             const next = queue.slice(0, index);
             setRecord({
-              frames: frames.map(frame => next.includes(frame.get('key')) ? frame : frame.set('show', false)),
+              frames: frames.map((frame: FrameItem) => next.includes(frame.key) ? frame : R.assoc('show', false, frame)),
               queue: next,
               props: props,
             });
@@ -83,10 +95,10 @@ const Machine = (props: {}) => {
     <>
       <Switch>{getRoutes()}</Switch>
       <ContextWrapper>
-        <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles()}>
+        <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles() as TransitionStyle[]}>
           {styles => <>{styles.map(({ key, data, style: { left, top, opacity, finished } }) => 
           <section key={key} className={`frame ${key}`} style={{ left: `${left}%`, top: `${top}%`, opacity, zIndex: data.zIndex }}>
-            {finished < 1 ? <Loading /> : <data.component {...(queue.last() === key ? record.props : {})} />}
+            {finished < 1 ? <Loading /> : <data.component {...(R.last(queue) === key ? record.props : {})} />}
           </section>)}</>}
         </TransitionMotion>
       </ContextWrapper>
