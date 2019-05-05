@@ -1,6 +1,6 @@
 # karaage
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). 
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 Nothing but a simple single page web application.
 
@@ -34,7 +34,7 @@ Nothing but a simple single page web application.
 
   TODO:
 
-  1. Handle url search parameter.
-  2. Remove immutableJS?
+  1. Handle url search parameter. √
+  2. Remove immutableJS? √
   3. Add comment.
   4. Type.
