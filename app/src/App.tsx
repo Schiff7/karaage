@@ -24,7 +24,7 @@ const Machine = () => {
     transparent: { opacity: 0 }
   };
   const [ record, setRecord ]: [
-    { frames: FrameItem[], queue: string[], props: {} },
+    { frames: FrameItem[], queue: string[], props: RouteComponentProps },
     (record: any) => void
   ] = useState({
     frames: [
@@ -37,7 +37,7 @@ const Machine = () => {
       { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false }
     ],
     queue: ['frame-home'],
-    props: {},
+    props: {} as RouteComponentProps,
   });
   const { frames, queue } = record;
   const willLeave = ({ data: { from, zIndex } }: TransitionStyle) => {

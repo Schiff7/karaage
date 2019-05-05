@@ -50,7 +50,7 @@ export const Post = withEffect(function (props: FrameProp<{ slug?: string }>) {
   const slug = props.match && props.match.params.slug; 
   useEffect(() => {
     const { run } = props;
-    if (!!slug) run('post', slug);
+    if (!!slug) run('post', { slug });
   }, [slug, status]);
   return (
     <MaybeLoading predict={status === Status.SUCCESSFUL}>

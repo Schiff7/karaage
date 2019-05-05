@@ -20,22 +20,22 @@ interface CreateActionInMutation<T> {
 }
 
 type WantPayload = { keyword: string; params: any[]; };
-export const want: CreateActionInMutation<WantPayload> = function (p) {
-  return { type: ActionType.WANT, payload: p };
+export const want: CreateActionInMutation<WantPayload> = function (payload) {
+  return { type: ActionType.WANT, payload };
 }
 type CallPayload = { fn: (...params: any[]) => Promise<any>, params: any[] };
-export const call: CreateActionInMutation<CallPayload> = function (p) {
-  return { type: ActionType.CALL, payload: p }; 
+export const call: CreateActionInMutation<CallPayload> = function (payload) {
+  return { type: ActionType.CALL, payload }; 
 }
 type PushPayload = { state: any }
-export const push: CreateActionInMutation<PushPayload> = function (p) {
-  return { type: ActionType.PUSH, payload: p };
+export const push: CreateActionInMutation<PushPayload> = function (payload) {
+  return { type: ActionType.PUSH, payload };
 }
 
 type ActionPayload = WantPayload | CallPayload | PushPayload;
 type MutationEffect = Iterator<ActionInMutation<ActionPayload>> | ActionInMutation<PushPayload>;
 interface Mutation<T> {
-  (p: T): MutationEffect;
+  (params: T): MutationEffect;
 }
 
 interface StateAndMutation<S, M> {
@@ -50,11 +50,11 @@ class Nuts {
   stack: string[] = [];
   diffs: Map<string, any> = new Map();
   listener: Map<string, ((store: { [key: string]: any }) => void)> = new Map();
-  constructor (p: StateAndMutation<any, any>[]) {
-    this.mutations = new Map(R.map(({key, mutation}) => [key, mutation], p));
+  constructor (items: StateAndMutation<any, any>[]) {
+    this.mutations = new Map(R.map(({key, mutation}) => [key, mutation], items));
     R.forEach(({key, state, mutation}) => {
       this.store[key] = R.type(mutation) === 'Function' ? state : { ...state, status: Status.INITIAL };
-    }, p);
+    }, items);
   }
   _send = (state: any): void => {
     const keyword = R.last(this.stack);
@@ -94,17 +94,17 @@ class Nuts {
     }
     else await this._next(cont, returned);
   }
-  run = async (keyword: string, p: any) => {
+  run = async (keyword: string, params: { [key: string]: any }) => {
 
     const diff = this.diffs.get(keyword);
-    if (diff && R.equals(diff, p)) return;
+    if (diff && R.equals(diff, params)) return;
 
     this.stack = R.append(keyword, this.stack);
-    this.diffs.set(keyword, p);
+    this.diffs.set(keyword, params);
     this._send({ status: Status.PENDING });
     const m = this.mutations.get(keyword);
     if (!m) throw Error(`Can not found the keyword ${keyword}`);
-    const cont = m(p);
+    const cont = m(params);
     if ((function (x: MutationEffect): x is ActionInMutation<PushPayload> {
       return R.type(x) === 'Function';
     })(cont)) await this._dispatch(cont);
@@ -191,10 +191,10 @@ const categories: StateAndMutation<{ value: string[] }, void> = {
   }
 }
 
-const post: StateAndMutation<{ value: string, slug: string }, string> = {
+const post: StateAndMutation<{ value: string, slug: string }, { slug: string }> = {
   key: 'post',
   state: { value: '', slug: '' },
-  mutation: function* (slug: string) {
+  mutation: function* ({ slug }) {
     const content: { value: ContentItem[] } = yield want({ keyword: 'content', params: [] });
     const { name } = R.find(R.propEq('slug', slug), content.value) as ContentItem;
     const post = yield call({ fn: fetchPost, params: [name] });
