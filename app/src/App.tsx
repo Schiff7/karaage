@@ -22,16 +22,23 @@ interface Record {
   props: RouteComponentProps;
 }
 // Fundamental component
-// There are Frames in the Machine.
-// Frames are basic assets to hold web content.
-// Frames have the same size as the window.
-// There are three position views: `main`, `right`, `bottom`.
-// A Frame can only be in either the `main` view, or the view where it is from.
-// Only the last Frame that be put into the `main` view can be seen by user.
-// Set the property of Frame `show` true will render the frame and trigger an animation of the frame from the view where it is from to `main` view.
-// Set the property of Frame `show` false will trigger an animation of the frame from the `main` view to the view where it is from and remove the frame.
-// Use router to control the visible of Frames.
-// Based on `TransitionMotion` of `react-motion`.
+
+/**
+ * 
+ * There are Frames in the Machine.
+ * Frames are basic assets to hold web content.
+ * Frames have the same size as the window.
+ * There are three position views: `main`, `right`, `bottom`.
+ * A Frame can only be in either the `main` view, or the view where it is from.
+ * Only the last Frame that be put into the `main` view can be seen by user.
+ * Set the property of Frame `show` true will render the frame 
+ * - and trigger an animation of the frame from the view where it is from to `main` view.
+ * Set the property of Frame `show` false will trigger an animation of the frame 
+ * - from the `main` view to the view where it is from and remove the frame.
+ * Use router to control the visible of Frames.
+ * Based on `TransitionMotion` of `react-motion`.
+ * 
+ */
 const Machine = () => {
   const views: { [key: string]: { [key: string]: number } } = {
     main: { left: 1, top: 1 },
@@ -83,7 +90,8 @@ const Machine = () => {
     return styles as TransitionStyle[];
   }
   // The Route matches current path does nothing.
-  // Routes do not match current path will render a component in which the effect hook set the record state hook to trigger a new render.
+  // Routes do not match current path will render a component 
+  // - in which the effect hook update the record state hook result in triggering a new render.
   // The above two points keep the Machine run with Router.
   const getRoutes = () => {
     const actionRoutes = frames.map((frame: Frame) => 
@@ -91,27 +99,28 @@ const Machine = () => {
         key={frame.key} 
         path={frame.path} 
         exact={!!frame.exact} component={(props: RouteComponentProps) => {
-        const alias = frame;
-        const index = queue.indexOf(frame.key) + 1;
-        useEffect(() => {
-          if (R.last(queue) === frame.key && frame.show) return;
-          if (!index) {
-            setRecord({ 
-              frames: frames.map((frame: Frame) => frame.key !== alias.key ? frame : R.assoc('show', true, frame)),
-              queue: R.append(frame.key, queue), 
-              props: props,
-            });
-          } else {
-            const next = queue.slice(0, index);
-            setRecord({
-              frames: frames.map((frame: Frame) => next.includes(frame.key) ? frame : R.assoc('show', false, frame)),
-              queue: next,
-              props: props,
-            });
-          }
-        });
-        return <></>;
-      }}/>);
+          const alias = frame;
+          const index = queue.indexOf(frame.key) + 1;
+          useEffect(() => {
+            if (R.last(queue) === frame.key && frame.show) return;
+            if (!index) {
+              setRecord({ 
+                frames: frames.map((frame: Frame) => frame.key !== alias.key ? frame : R.assoc('show', true, frame)),
+                queue: R.append(frame.key, queue), 
+                props: props,
+              });
+            } else {
+              const next = queue.slice(0, index);
+              setRecord({
+                frames: frames.map((frame: Frame) => next.includes(frame.key) ? frame : R.assoc('show', false, frame)),
+                queue: next,
+                props: props,
+              });
+            }
+          });
+          return <></>;
+        }}
+      />);
     return actionRoutes;
   }
   return (

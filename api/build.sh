@@ -1,5 +1,7 @@
 #!/bin/bash
+
 # Build karaage
+
 # List and read markdown files in the `/data/` directory,
 # to every file, a json object as follow:
 # { 
