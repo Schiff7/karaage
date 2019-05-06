@@ -6,6 +6,7 @@ import { ContextWrapper } from './impure';
 import * as R from 'ramda';
 import './App.css';
 
+// Frame
 interface Frame {
   key: string;
   component: any;
@@ -14,12 +15,23 @@ interface Frame {
   path: string | undefined;
   exact?: boolean;
 }
+// Record
 interface Record { 
   frames: Frame[];
   queue: string[];
   props: RouteComponentProps;
 }
 // Fundamental component
+// There are Frames in the Machine.
+// Frames are basic assets to hold web content.
+// Frames have the same size as the window.
+// There are three position views: `main`, `right`, `bottom`.
+// A Frame can only be in either the `main` view, or the view where it is from.
+// Only the last Frame that be put into the `main` view can be seen by user.
+// Set the property of Frame `show` true will render the frame and trigger an animation of the frame from the view where it is from to `main` view.
+// Set the property of Frame `show` false will trigger an animation of the frame from the `main` view to the view where it is from and remove the frame.
+// Use router to control the visible of Frames.
+// Based on `TransitionMotion` of `react-motion`.
 const Machine = () => {
   const views: { [key: string]: { [key: string]: number } } = {
     main: { left: 1, top: 1 },
@@ -29,6 +41,7 @@ const Machine = () => {
     transparent: { opacity: 0 }
   };
   const [record, setRecord]: [Record, (record: Record) => void] = useState({
+    // Frames
     frames: [
       { key: 'frame-home', path: '/', exact: true, component: Nav, from: 'main', show: true },
       { key: 'frame-content', path: '/posts', exact: true, component: Content, from: 'right', show: false },
@@ -38,20 +51,25 @@ const Machine = () => {
       { key: 'frame-post', path: '/posts/:slug', component: Post, from: 'bottom', show: false },
       { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false }
     ],
+    // Frames in `main` view
     queue: ['frame-home'],
+    // Route props
+    // Will be passed to the current visible Frame.
     props: {} as RouteComponentProps,
   } as Record);
   const { frames, queue } = record;
+  // Styles that will be applied before the Frames unmount.
   const willLeave = ({ data: { from, zIndex } }: TransitionStyle) => {
     const { left, top } = views[from];
     return { left: spring(left), top: spring(top), opacity: spring(0), zIndex };
   }
+  // Styles that will be applied when Frames mount.
   // Add special key `finished` to predict if the animation has finished, 
-  // maybe crashed.
+  // Maybe crashed.
   const willEnter = ({ data: { from } }: TransitionStyle) => {
     return { ...views[from], opacity: 0, finished: 0 };
   }
-
+  // Generate styles passed to `TransitionMotion`.
   const getStyles = (): TransitionStyle[] => {
     const styles = R.pipe(
       R.filter((frame: Frame) => frame.show),
@@ -64,6 +82,9 @@ const Machine = () => {
     )(frames);
     return styles as TransitionStyle[];
   }
+  // The Route matches current path does nothing.
+  // Routes do not match current path will render a component in which the effect hook set the record state hook to trigger a new render.
+  // The above two points keep the Machine run with Router.
   const getRoutes = () => {
     const actionRoutes = frames.map((frame: Frame) => 
       <Route 

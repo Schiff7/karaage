@@ -2,7 +2,6 @@ import React from 'react';
 import axios from 'axios';
 import * as R from 'ramda';
 import marked from 'marked';
-import { RouteComponentProps } from 'react-router';
 
 enum ActionType {
   WANT = 'WANT',
@@ -233,7 +232,7 @@ export class ContextWrapper extends React.PureComponent<{}, ContextWrapperState>
 
 export const withEffect = (component: any) => {
   const Alias = component;
-  return function (props: RouteComponentProps) {
+  return function (props: any) {
     return (
       <ImpureContext.Consumer>
         {context => <Alias run={context.run} store={context.store} {...props}/>}

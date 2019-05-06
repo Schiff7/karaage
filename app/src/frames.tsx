@@ -3,6 +3,7 @@ import { Motion, spring, Style } from 'react-motion';
 import { Link, RouteComponentProps } from 'react-router-dom';
 import { withEffect, Status, ContentItem } from './impure';
 
+// Fade out when mounted.
 export class FadeOut extends Component<{}, Style> {
   constructor (props: {}) {
     super(props);
@@ -20,17 +21,21 @@ export class FadeOut extends Component<{}, Style> {
   }
 }
 
+// Loading
 export function Loading () {
   return <div className="loading">LOADING...</div>;
 }
 
+// Display Loading component while predict is false. 
 export function MaybeLoading (props: { predict: boolean; children: ReactElement }) {
   return props.predict ? <FadeOut>{props.children}</FadeOut> : <Loading />;
 }
 
+// Component
+
 type FrameProp<T> = RouteComponentProps<T> & { run: (keyword: string, params?: any) => void, store: { [key: string]: any } };
 
-// Component
+// Nav
 export function Nav () {
   return (
     <nav>
@@ -45,6 +50,7 @@ export function Nav () {
   );
 }
 
+// Post
 export const Post = withEffect(function (props: FrameProp<{ slug?: string }>) {
   const { post: { value, status } } = props.store;
   const slug = props.match && props.match.params.slug; 
@@ -59,6 +65,7 @@ export const Post = withEffect(function (props: FrameProp<{ slug?: string }>) {
   );
 });
 
+// Content
 export const Content = withEffect(function (props: FrameProp<{}>) {
   const { content: { value, status } } = props.store;
   const [content, setContent] = useState([] as ContentItem[]);
@@ -98,6 +105,7 @@ export const Content = withEffect(function (props: FrameProp<{}>) {
   );
 });
 
+// Categories
 export const Categories = withEffect(function (props: FrameProp<{}>) {
   const { categories: { value, status } } = props.store;
   useEffect(() => {
@@ -115,6 +123,7 @@ export const Categories = withEffect(function (props: FrameProp<{}>) {
   );
 });
 
+// Tags
 export const Tags = withEffect(function (props: FrameProp<{}>) {
   const { tags: { value, status } } = props.store;
   useEffect(() => {
@@ -132,10 +141,12 @@ export const Tags = withEffect(function (props: FrameProp<{}>) {
   );
 });
 
+// About
 export function About () {
   return <div className='about'>UNDER CONSTRUCTION</div>;
 }
 
+// NoMatch
 export function NoMatch () {
   return <div className='no-match'>NO-MATCH</div>;
-};
+}
