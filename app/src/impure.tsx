@@ -44,13 +44,12 @@ interface StateAndMutation<S, M> {
 }
 
 class Nuts {
-  mutations: Map<string, Mutation<any>>;
+  mutations: Map<string, [Mutation<any>, any]>;
   store: { [key: string]: any } = {};
   stack: string[] = [];
-  diffs: Map<string, any> = new Map();
   listener: Map<string, ((store: { [key: string]: any }) => void)> = new Map();
   constructor (items: StateAndMutation<any, any>[]) {
-    this.mutations = new Map(R.map(({key, mutation}) => [key, mutation], items));
+    this.mutations = new Map(R.map(({key, mutation}) => [key, [mutation, undefined]], items));
     R.forEach(({key, state, mutation}) => {
       this.store[key] = R.type(mutation) === 'Function' ? state : { ...state, status: Status.INITIAL };
     }, items);
@@ -95,13 +94,12 @@ class Nuts {
   }
   run = async (keyword: string, params: { [key: string]: any }) => {
 
-    const diff = this.diffs.get(keyword);
-    if (diff && R.equals(diff, params)) return;
+    const [m, d] = this.mutations.get(keyword) as [Mutation<any>, any];
+    if (d && R.equals(d, params)) return;
 
     this.stack = R.append(keyword, this.stack);
-    this.diffs.set(keyword, params);
+    this.mutations.set(keyword, [m, params]);
     this._send({ status: Status.PENDING });
-    const m = this.mutations.get(keyword);
     if (!m) throw Error(`Can not found the keyword ${keyword}`);
     const cont = m(params);
     if ((function (x: MutationEffect): x is ActionInMutation<PushPayload> {
