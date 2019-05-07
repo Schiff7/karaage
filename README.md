@@ -36,5 +36,5 @@ Nothing but a simple single page web application.
 
   1. Handle url search parameter. √
   2. Remove immutableJS? √
-  3. Add comment.
+  3. Add comment. √
   4. Type.
