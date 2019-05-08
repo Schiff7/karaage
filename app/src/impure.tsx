@@ -51,6 +51,9 @@ type Mutations<T> = { [P in keyof T]
   : T[P] extends { mutation: Mutation<infer M> } 
   ? [Mutation<MaybeUndefined<M>>, MaybeUndefined<M>] : never }
 
+/**
+ * Manage sharing state.
+ */
 class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
   store: Store<T> = {} as Store<T>;
   mutations: Mutations<T>;
@@ -63,6 +66,7 @@ class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
       ? state 
       : { ...state, status: Status.INITIAL }, items) as Store<T>;
   }
+  // To update the store.
   _send = (state: any): void => {
     const keyword = R.last(this.stack);
     if (!!keyword) {
@@ -72,6 +76,7 @@ class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
     }
     this._notify();
   }
+  // Handle the actions yield by mutation.
   _dispatch = async (action: ActionInMutation<ActionPayload>) => {
     switch (action.type) {
       case ActionType.WANT: {
@@ -91,6 +96,7 @@ class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
       default: return;
     }
   }
+  // Recursively run the mutation of generator type.
   _next = async (cont: Iterator<ActionInMutation<ActionPayload>>, prev: any) => {
     const { value, done } = cont.next(prev);
     const returned = await this._dispatch(value);
@@ -101,13 +107,14 @@ class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
     }
     else await this._next(cont, returned);
   }
+  // Run a mutation.
   run = async (keyword: keyof T, params: StandardParams) => {
-
+    // Avoid unneccessary running of mutation.
     const [m, d] = R.prop(keyword, this.mutations);
-    if (this.store[keyword]['status'] !== Status.INITIAL 
+    const s = R.prop(keyword, this.store);
+    if (R.prop('status', s) !== Status.INITIAL 
       && R.equals(d, params)) return;
-
-
+    // Run the mutation.
     this.stack = R.append(keyword, this.stack);
     this.mutations = R.assoc(keyword, [m, params], this.mutations);
     this._send({ status: Status.PENDING });
@@ -206,7 +213,7 @@ const post: StateAndMutation<{ value: string, slug: string }, { slug: string }> 
   }
 }
 
-const ASSETS = {content, tags, categories, post};
+const ASSETS = { content, tags, categories, post };
 
 const instance = new Nuts(ASSETS);
 
