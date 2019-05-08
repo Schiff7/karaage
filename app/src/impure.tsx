@@ -9,6 +9,8 @@ enum ActionType {
   PUSH = 'PUSH',
 }
 
+type StandardParams = Record<string, any> | undefined;
+
 interface ActionInMutation<T> { 
   type: ActionType; 
   payload: T
@@ -18,11 +20,11 @@ interface CreateActionInMutation<T> {
   (p: T): ActionInMutation<T>;
 }
 
-type WantPayload = { keyword: string; params: any[]; };
+type WantPayload = { keyword: string; params?: StandardParams; };
 export const want: CreateActionInMutation<WantPayload> = function (payload) {
   return { type: ActionType.WANT, payload };
 }
-type CallPayload = { fn: (...params: any[]) => Promise<any>, params: any[] };
+type CallPayload = { fn: (params: any) => Promise<any>, params?: any };
 export const call: CreateActionInMutation<CallPayload> = function (payload) {
   return { type: ActionType.CALL, payload }; 
 }
@@ -38,26 +40,33 @@ interface Mutation<T> {
 }
 
 interface StateAndMutation<S, M> {
-  key: string;
   state: S
   mutation: Mutation<M>;
 }
 
-class Nuts {
-  mutations: Map<string, [Mutation<any>, any]>;
-  store: { [key: string]: any } = {};
-  stack: string[] = [];
-  listener: Map<string, ((store: { [key: string]: any }) => void)> = new Map();
-  constructor (items: StateAndMutation<any, any>[]) {
-    this.mutations = new Map(R.map(({key, mutation}) => [key, [mutation, undefined]], items));
-    R.forEach(({key, state, mutation}) => {
-      this.store[key] = R.type(mutation) === 'Function' ? state : { ...state, status: Status.INITIAL };
-    }, items);
+type MaybeStatus<T> = T & { status?: Status };
+type MaybeUndefined<T> = T | undefined;
+type Store<T> = { [P in keyof T]: T[P] extends { state: infer S } ? MaybeStatus<S> : never };
+type Mutations<T> = { [P in keyof T]
+  : T[P] extends { mutation: Mutation<infer M> } 
+  ? [Mutation<MaybeUndefined<M>>, MaybeUndefined<M>] : never }
+
+class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
+  store: Store<T> = {} as Store<T>;
+  mutations: Mutations<T>;
+  stack: (keyof T)[] = [];
+  listener: Map<string, (store: Store<T>) => void> = new Map();
+  constructor (items: T) {
+    this.mutations = R.map(({mutation}) => [mutation, undefined], items) as Mutations<T>;
+    this.store = R.map(({state, mutation}) =>
+      R.type(mutation) === 'Function' 
+      ? state 
+      : { ...state, status: Status.INITIAL }, items) as Store<T>;
   }
   _send = (state: any): void => {
     const keyword = R.last(this.stack);
     if (!!keyword) {
-      const prev = this.store[keyword];
+      const prev = R.prop(keyword, this.store);
       this.store = { ...this.store, [keyword]: { ...prev, ...state } };
       console.log(this.store);
     }
@@ -67,12 +76,12 @@ class Nuts {
     switch (action.type) {
       case ActionType.WANT: {
         const { payload: { keyword, params } } = action as ActionInMutation<WantPayload>;
-        await this.run(keyword, params);
-        return this.store[keyword];
+        await this.run(keyword as keyof T, params);
+        return R.prop(keyword, this.store);
       }
       case ActionType.CALL: {
         const { payload: { fn, params } } = action as ActionInMutation<CallPayload>;
-        const result = await R.apply(fn, params);
+        const result = await R.call(fn, params);
         return result;
       }
       case ActionType.PUSH: {
@@ -92,13 +101,15 @@ class Nuts {
     }
     else await this._next(cont, returned);
   }
-  run = async (keyword: string, params: { [key: string]: any }) => {
+  run = async (keyword: keyof T, params: StandardParams) => {
 
-    const [m, d] = this.mutations.get(keyword) as [Mutation<any>, any];
-    if (d && R.equals(d, params)) return;
+    const [m, d] = R.prop(keyword, this.mutations);
+    if (this.store[keyword]['status'] !== Status.INITIAL 
+      && R.equals(d, params)) return;
+
 
     this.stack = R.append(keyword, this.stack);
-    this.mutations.set(keyword, [m, params]);
+    this.mutations = R.assoc(keyword, [m, params], this.mutations);
     this._send({ status: Status.PENDING });
     if (!m) throw Error(`Can not found the keyword ${keyword}`);
     const cont = m(params);
@@ -114,7 +125,7 @@ class Nuts {
     }
     return;
   }
-  subscribe = (name: string, fn: ((store: { [key: string]: any }) => void)) => {
+  subscribe = (name: string, fn: (store: Store<T>) => void) => {
     this.listener.set(name, fn);
   } 
   unsubscribe = (name: string) => {
@@ -148,25 +159,23 @@ const fetchContent = async (): Promise<ContentItem[]> => {
   return response.data;
 }
 
-const fetchPost = async (slug: string): Promise<string> => {
-  const response = await axios.get(`/data/${slug}`);
+const fetchPost = async ({ name }: { name: string }): Promise<string> => {
+  const response = await axios.get(`/data/${name}`);
   return marked(response.data);
 }
 
 const content: StateAndMutation<{ value: ContentItem[] }, void> = {
-  key: 'content',
   state: { value: [] },
   mutation: function* () {
-    const content = yield call({ fn: fetchContent, params: [] });
+    const content = yield call({ fn: fetchContent });
     return push({ state: { value: content } });
   }
 }
 
 const tags: StateAndMutation<{ value: string[] }, void> = {
-  key: 'tags',
   state: { value: [] },
   mutation: function* () {
-    const content: { value: ContentItem[] } = yield want({ keyword: 'content', params: [] });
+    const content: { value: ContentItem[] } = yield want({ keyword: 'content'});
     const tags = R.pipe(
       R.reduce((acc, item: ContentItem) => R.concat(acc, item.tags), [] as string[]),
       R.dropRepeats
@@ -176,10 +185,9 @@ const tags: StateAndMutation<{ value: string[] }, void> = {
 }
 
 const categories: StateAndMutation<{ value: string[] }, void> = {
-  key: 'categories',
   state: { value: [] },
   mutation: function* () {
-    const content: { value: ContentItem[] } = yield want({ keyword: 'content', params: [] });
+    const content: { value: ContentItem[] } = yield want({ keyword: 'content' });
     const categories = R.pipe(
       R.reduce((acc, item: ContentItem) => R.append(item.category, acc), [] as string[]),
       R.dropRepeats
@@ -189,17 +197,18 @@ const categories: StateAndMutation<{ value: string[] }, void> = {
 }
 
 const post: StateAndMutation<{ value: string, slug: string }, { slug: string }> = {
-  key: 'post',
   state: { value: '', slug: '' },
   mutation: function* ({ slug }) {
-    const content: { value: ContentItem[] } = yield want({ keyword: 'content', params: [] });
+    const content: { value: ContentItem[] } = yield want({ keyword: 'content' });
     const { name } = R.find(R.propEq('slug', slug), content.value) as ContentItem;
-    const post = yield call({ fn: fetchPost, params: [name] });
+    const post = yield call({ fn: fetchPost, params: { name } });
     return push({ state: { value: post, slug } });
   }
 }
 
-const instance = new Nuts([ content, tags, categories, post ]);
+const ASSETS = {content, tags, categories, post};
+
+const instance = new Nuts(ASSETS);
 
 const ImpureContext = React.createContext({ store: {}, run: instance.run });
 
