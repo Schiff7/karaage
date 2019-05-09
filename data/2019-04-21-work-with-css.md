@@ -110,3 +110,5 @@ ul.li-with-bg-red li {
   background-color: red;
 }
 ```
+
+Take the balance of the two ways makes things better.
