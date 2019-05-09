@@ -21,19 +21,19 @@ interface CreateActionInMutation<T> {
 }
 
 type WantPayload = { keyword: string; params?: StandardParams; };
-export const want: CreateActionInMutation<WantPayload> = function (payload) {
+export function want<T> (payload: T): ActionInMutation<T> {
   return { type: ActionType.WANT, payload };
 }
-type CallPayload = { fn: (params: any) => Promise<any>, params?: any };
-export const call: CreateActionInMutation<CallPayload> = function (payload) {
-  return { type: ActionType.CALL, payload }; 
+type CallPayload<T> = { fn: (params: T) => Promise<any>, params?: T };
+export function call<T> (payload: CallPayload<T>): ActionInMutation<CallPayload<T>> {
+  return { type: ActionType.CALL, payload };
 }
 type PushPayload = { state: any }
-export const push: CreateActionInMutation<PushPayload> = function (payload) {
+export function push<T> (payload: T): ActionInMutation<T> {
   return { type: ActionType.PUSH, payload };
 }
 
-type ActionPayload = WantPayload | CallPayload | PushPayload;
+type ActionPayload = WantPayload | CallPayload<any> | PushPayload;
 type MutationEffect = Iterator<ActionInMutation<ActionPayload>> | ActionInMutation<PushPayload>;
 interface Mutation<T> {
   (params: T): MutationEffect;
@@ -44,9 +44,9 @@ interface StateAndMutation<S, M> {
   mutation: Mutation<M>;
 }
 
-type MaybeStatus<T> = T & { status?: Status };
+type OptionalStatus<T> = T & { status?: Status };
 type MaybeUndefined<T> = T | undefined;
-type Store<T> = { [P in keyof T]: T[P] extends { state: infer S } ? MaybeStatus<S> : never };
+type Store<T> = { [P in keyof T]: T[P] extends { state: infer S } ? OptionalStatus<S> : never };
 type Mutations<T> = { [P in keyof T]
   : T[P] extends { mutation: Mutation<infer M> } 
   ? [Mutation<MaybeUndefined<M>>, MaybeUndefined<M>] : never }
@@ -85,7 +85,7 @@ class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
         return R.prop(keyword, this.store);
       }
       case ActionType.CALL: {
-        const { payload: { fn, params } } = action as ActionInMutation<CallPayload>;
+        const { payload: { fn, params } } = action as ActionInMutation<CallPayload<any>>;
         const result = await R.call(fn, params);
         return result;
       }
@@ -109,7 +109,7 @@ class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
   }
   // Run a mutation.
   run = async (keyword: keyof T, params: StandardParams) => {
-    // Avoid unneccessary running of mutation.
+    // Avoid unnecessary running of mutation.
     const [m, d] = R.prop(keyword, this.mutations);
     const s = R.prop(keyword, this.store);
     if (R.prop('status', s) !== Status.INITIAL 
