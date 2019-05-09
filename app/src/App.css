@@ -3,8 +3,7 @@
 /**
  * AUTHOR: HU
  */
-/* ================== FONTS */
-@import url('https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300i');
+
 /* ================== GLOBAL */
 html, body {
   height: 100%;
@@ -164,17 +163,21 @@ nav a {
 /* ================= MARKDOWN */
 .post {
   font-size: 14px;
+  font-family: 'M+ C Type-1 (basic latin) Regular','M+ Type-1 (general-j) Regular';
 }
-pre {
+.post pre {
   margin: .5em 0;
   padding: .4em .6em;
-  font-size: 12px;
   line-height: 1.5;
   border-radius: 2px;
   background: #f8f8f8;
   overflow-x: auto;
 }
-
-.code {
+.post code {
+  background-color: #f8f8f8;
+  border-radius: 3px;
+  font-size: 85%;
+  margin: 0;
+  padding: .2em .4em;
   font-family: Menlo,Monaco,Consolas,"Andale Mono","lucida console","Courier New",monospace;
 }
