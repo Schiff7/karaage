@@ -160,6 +160,9 @@ nav a {
   margin: 0 auto;
   padding: 10vh 5vw;
 }
+.content .post-date {
+  margin-right: 2vw;
+}
 /* ================= MARKDOWN */
 .post {
   font-size: 14px;

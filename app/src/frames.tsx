@@ -98,7 +98,11 @@ export const Content = withEffect(function (props: FrameProp<{}>) {
         <ul>
           {content.length === 0
             ? <li>Nothing here.</li>
-            : content.map(({ slug }: { slug: string }) => <li key={slug}><Link className="underline" to={`/posts/${slug}`}>{slug}</Link></li>)}
+            : content.map(({ slug, date }) => 
+              <li key={slug}>
+                <span className="post-date">{`${date.y}.${date.m}.${date.d}`}</span>
+                <Link className="post-title underline" to={`/posts/${slug}`}>{slug}</Link>
+              </li>)}
         </ul>
       </div>
     </MaybeLoading>
