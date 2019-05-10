@@ -80,7 +80,7 @@ const b = new A();
 a.bar === b.bar; // true;
 ```
 
-重新描述new关键字的执行过程：
+重新描述`new`关键字的执行过程：
 
 ```javascript
 function _new(constructor, ...params) {
