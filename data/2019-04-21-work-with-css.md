@@ -111,4 +111,4 @@ ul.li-with-bg-red li {
 }
 ```
 
-Take the balance of the two ways makes things better.
+Taking the balance of the two ways makes things better.
