@@ -2,6 +2,7 @@ import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch, RouteComponentProps } from 'react-router-dom';
 import { TransitionMotion, spring, TransitionStyle } from 'react-motion';
 import { Nav, Post, Content, Categories, Tags, About, NoMatch, Loading } from './frames';
+import { Captions } from './captions';
 import { ContextWrapper } from './impure';
 import * as R from 'ramda';
 import './App.css';
@@ -56,7 +57,8 @@ const Machine = () => {
       { key: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false },
       { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
       { key: 'frame-post', path: '/posts/:slug', component: Post, from: 'bottom', show: false },
-      { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false }
+      { key: 'frame-captions', path: '/tools/captions', component: Captions, from: 'bottom', show: false },
+      { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false },
     ],
     // Frames in `main` view
     queue: ['frame-home'],

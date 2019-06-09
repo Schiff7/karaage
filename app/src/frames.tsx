@@ -33,7 +33,7 @@ export function MaybeLoading (props: { predict: boolean; children: ReactElement 
 
 // Component
 
-type FrameProp<T> = RouteComponentProps<T> & { run: (keyword: string, params?: any) => void, store: { [key: string]: any } };
+export type FrameProp<T> = RouteComponentProps<T> & { run: (keyword: string, params?: any) => void, store: { [key: string]: any } };
 
 // Nav
 export function Nav () {
