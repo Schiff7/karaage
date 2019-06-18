@@ -1,6 +1,19 @@
 import React, { DragEvent, ChangeEvent, useState } from 'react';
 import * as R from 'ramda';
 
+/**
+ * 1. There are files of format A and B
+ *  1.1 Recognize them before read +
+ *  1.2 Read a file +
+ *  1.3 Keep file's info -
+ *  1.4 Parse file's content (string) to data structure -
+ * 2. With the successfully parsed files
+ *  2.1 Operation on files -
+ *  2.2 Operation on files' content -
+ *  2.3 Drag component -
+ */
+
+// Dialogue
 interface Dialogue {
   format: string;
   layer: string;
@@ -15,16 +28,14 @@ interface Dialogue {
   text: string;
 }
 
-type Selected = boolean;
+// view to show a line.
+function Line () {}
 
-export function Captions () {
-  const [captions, setCaptions] = useState([] as [File, Selected][]);
-  const [timeAxises, setTimeAxises] = useState([] as [File, Selected][]);
+// operation on files.
+export function Panel () {
   function loadFiles (files: FileList | null) {
     if (files) {
       const _files = Array.from(files);
-      setCaptions(_files.filter(file => !/\.ass$/.test(file.name)).map(file => [file, false]));
-      setTimeAxises(_files.filter(file => /\.ass$/.test(file.name)).map(file => [file, false]));
     }
   }
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -38,35 +49,11 @@ export function Captions () {
   }
   return (
     <div className='captions'>
-      <input className='entry' onChange={handleChange} type="file" multiple/>
-      <div className='area' onDrop={handleDrop} onDragOver={preventDefault}></div>
+      <input className='dropEntry' onChange={handleChange} type="file" multiple/>
+      <div className='dropArea' onDrop={handleDrop} onDragOver={preventDefault}></div>
       <div className='files'>
-        <div className='files-time-axis'>
-          <h3>time axis</h3>
-          <ul>
-            {timeAxises.map(([file, selected]) => 
-              <li 
-                className={selected ? 'selected': ''}
-                onClick={() => setTimeAxises(timeAxises.map(([_file, selected]) => _file === file ? [_file, !selected] : [_file, selected]))} 
-                key={file.name}
-              >
-                {file.name}
-              </li>)}
-          </ul>
-        </div>
-        <div className='files-captions'>
-          <h3>caption</h3>
-          <ul>
-            {captions.map(([file, selected]) => 
-              <li 
-                className={selected ? 'selected': ''}
-                onClick={() => setCaptions(captions.map(([_file, selected]) => _file === file ? [_file, !selected] : [_file, selected]))} 
-                key={file.name}
-              >
-                {file.name}
-              </li>)}
-          </ul>
-        </div>
+        <div className='files-time-axis'></div>
+        <div className='files-captions'></div>
       </div>
     </div>
   );
