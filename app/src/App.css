@@ -36,16 +36,18 @@ section {
 .underline::after {
   content: '';
   position: absolute;
-  left: 50%;
+  left: 0;
   bottom: -2px;
-  width: 0;
+  width: 100%;
   height: 1px;
   background-color: #323232;
-  transform: translateX(-50%);
-  transition: width .5s ease;
+  transform: scaleX(0);
+  transform-origin: 100% 50%;
+  transition: transform .5s ease;
 }
 .underline:hover::after {
-  width: 100%
+  transform-origin: 0 50%;
+  transform: scale(1);
 }
 
 .cursor-pointer {
