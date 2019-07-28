@@ -16,10 +16,6 @@ interface ActionInMutation<T> {
   payload: T
 }
 
-interface CreateActionInMutation<T> {
-  (p: T): ActionInMutation<T>;
-}
-
 type WantPayload = { keyword: string; params?: StandardParams; };
 export function want<T> (payload: T): ActionInMutation<T> {
   return { type: ActionType.WANT, payload };
@@ -44,17 +40,25 @@ interface StateAndMutation<S, M> {
   mutation: Mutation<M>;
 }
 
-type OptionalStatus<T> = T & { status?: Status };
+type SomeError = any;
+type OptionalStatus<T> = T & { status?: Status, error?: SomeError };
 type MaybeUndefined<T> = T | undefined;
 type Store<T> = { [P in keyof T]: T[P] extends { state: infer S } ? OptionalStatus<S> : never };
 type Mutations<T> = { [P in keyof T]
   : T[P] extends { mutation: Mutation<infer M> } 
   ? [Mutation<MaybeUndefined<M>>, MaybeUndefined<M>] : never }
+type StateAndMutations<T> = { [P in keyof T]: T[P] extends StateAndMutation<infer S, infer M>
+  ? StateAndMutation<S, M>
+  : never };
+type Value<T> = T[keyof T]; 
+
+declare function m<T>(p:T):Value<T>;
+const a = m({ a: '1', b: 2 });
 
 /**
  * Manage sharing state.
  */
-class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
+class Nuts<T extends StateAndMutations<T>> {
   store: Store<T> = {} as Store<T>;
   mutations: Mutations<T>;
   stack: (keyof T)[] = [];
@@ -67,7 +71,7 @@ class Nuts<T extends { [P in keyof T]: StateAndMutation<any, any> }> {
       : { ...state, status: Status.INITIAL }, items) as Store<T>;
   }
   // To update the store.
-  _send = (state: any): void => {
+  _send = (state: Value<Store<T>>): void => {
     const keyword = R.last(this.stack);
     if (!!keyword) {
       const prev = R.prop(keyword, this.store);
