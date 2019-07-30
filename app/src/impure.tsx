@@ -2,6 +2,7 @@ import React from 'react';
 import axios from 'axios';
 import * as R from 'ramda';
 import marked from 'marked';
+import { FrameProp } from './frames';
 
 enum ActionType {
   WANT = 'WANT',
@@ -20,8 +21,8 @@ type WantPayload = { keyword: string; params?: StandardParams; };
 export function want<T> (payload: T): ActionInMutation<T> {
   return { type: ActionType.WANT, payload };
 }
-type CallPayload<T> = { fn: (params: T) => Promise<any>, params?: T };
-export function call<T> (payload: CallPayload<T>): ActionInMutation<CallPayload<T>> {
+type CallPayload<T, U> = { fn: (params: T) => Promise<U>, params?: T };
+export function call<T, U> (payload: CallPayload<T, U>): ActionInMutation<CallPayload<T, U>> {
   return { type: ActionType.CALL, payload };
 }
 type PushPayload = { state: any }
@@ -29,15 +30,15 @@ export function push<T> (payload: T): ActionInMutation<T> {
   return { type: ActionType.PUSH, payload };
 }
 
-type ActionPayload = WantPayload | CallPayload<any> | PushPayload;
-type MutationEffect = Iterator<ActionInMutation<ActionPayload>> | ActionInMutation<PushPayload>;
-interface Mutation<T> {
-  (params: T): MutationEffect;
+type ActionPayload<T, U> = WantPayload | CallPayload<T, U> | PushPayload;
+type MutationEffect<T, U> = Iterator<ActionInMutation<ActionPayload<T, U>>> | ActionInMutation<PushPayload>;
+interface Mutation<T, U, V> {
+  (params: T): MutationEffect<U, V>;
 }
 
-interface StateAndMutation<S, M> {
+interface StateAndMutation<S, M, U, V> {
   state: S
-  mutation: Mutation<M>;
+  mutation: Mutation<M, U, V>;
 }
 
 type SomeError = any;
@@ -45,15 +46,18 @@ type OptionalStatus<T> = T & { status?: Status, error?: SomeError };
 type MaybeUndefined<T> = T | undefined;
 type Store<T> = { [P in keyof T]: T[P] extends { state: infer S } ? OptionalStatus<S> : never };
 type Mutations<T> = { [P in keyof T]
-  : T[P] extends { mutation: Mutation<infer M> } 
-  ? [Mutation<MaybeUndefined<M>>, MaybeUndefined<M>] : never }
-type StateAndMutations<T> = { [P in keyof T]: T[P] extends StateAndMutation<infer S, infer M>
-  ? StateAndMutation<S, M>
+  : T[P] extends { mutation: Mutation<infer M, infer U, infer V> } 
+  ? [Mutation<MaybeUndefined<M>, U, V>, MaybeUndefined<M>] : never }
+type StateAndMutations<T> = { [P in keyof T]: T[P] extends StateAndMutation<infer S, infer M, infer U, infer V>
+  ? StateAndMutation<S, M, U, V>
+  : never };
+type Payloads<T> = { [P in keyof T]: T[P] extends StateAndMutation<any, any, infer U, infer V> 
+  ? ActionPayload<U, V> 
+  : never };
+type Calls<T> = { [P in keyof T]: T[P] extends StateAndMutation<any, any, infer U, infer V> 
+  ? CallPayload<U, V> 
   : never };
 type Value<T> = T[keyof T]; 
-
-declare function m<T>(p:T):Value<T>;
-const a = m({ a: '1', b: 2 });
 
 /**
  * Manage sharing state.
@@ -71,7 +75,7 @@ class Nuts<T extends StateAndMutations<T>> {
       : { ...state, status: Status.INITIAL }, items) as Store<T>;
   }
   // To update the store.
-  _send = (state: Value<Store<T>>): void => {
+  _send = (state: Value<Store<T>> | OptionalStatus<{}>): void => {
     const keyword = R.last(this.stack);
     if (!!keyword) {
       const prev = R.prop(keyword, this.store);
@@ -81,7 +85,7 @@ class Nuts<T extends StateAndMutations<T>> {
     this._notify();
   }
   // Handle the actions yield by mutation.
-  _dispatch = async (action: ActionInMutation<ActionPayload>) => {
+  _dispatch = async (action: ActionInMutation<Value<Payloads<T>>>) => {
     switch (action.type) {
       case ActionType.WANT: {
         const { payload: { keyword, params } } = action as ActionInMutation<WantPayload>;
@@ -89,7 +93,7 @@ class Nuts<T extends StateAndMutations<T>> {
         return R.prop(keyword, this.store);
       }
       case ActionType.CALL: {
-        const { payload: { fn, params } } = action as ActionInMutation<CallPayload<any>>;
+        const { payload: { fn, params } } = action as unknown as ActionInMutation<Value<Calls<T>>>;
         const result = await R.call(fn, params);
         return result;
       }
@@ -101,7 +105,7 @@ class Nuts<T extends StateAndMutations<T>> {
     }
   }
   // Recursively run the mutation of generator type.
-  _next = async (cont: Iterator<ActionInMutation<ActionPayload>>, prev: any) => {
+  _next = async (cont: Iterator<ActionInMutation<Value<Payloads<T>>>>, prev: any) => {
     const { value, done } = cont.next(prev);
     const returned = await this._dispatch(value);
     if (done) {
@@ -124,12 +128,12 @@ class Nuts<T extends StateAndMutations<T>> {
     this._send({ status: Status.PENDING });
     if (!m) throw Error(`Can not found the keyword ${keyword}`);
     const cont = m(params);
-    if ((function (x: MutationEffect): x is ActionInMutation<PushPayload> {
+    if ((function (x: MutationEffect<any, any>): x is ActionInMutation<PushPayload> {
       return R.type(x) === 'Function';
-    })(cont)) await this._dispatch(cont);
+    })(cont)) await this._dispatch(cont as ActionInMutation<Value<Payloads<T>>>);
     else {
       try {
-        await this._next(cont, undefined);
+        await this._next(cont as Iterator<ActionInMutation<Value<Payloads<T>>>>, undefined);
       } catch (e) {
         this._send({ status: Status.ERROR, error: e });
       }
@@ -175,7 +179,7 @@ const fetchPost = async ({ name }: { name: string }): Promise<string> => {
   return marked(response.data);
 }
 
-const content: StateAndMutation<{ value: ContentItem[] }, void> = {
+const content = {
   state: { value: [] },
   mutation: function* () {
     const content = yield call({ fn: fetchContent });
@@ -183,7 +187,7 @@ const content: StateAndMutation<{ value: ContentItem[] }, void> = {
   }
 }
 
-const tags: StateAndMutation<{ value: string[] }, void> = {
+const tags = {
   state: { value: [] },
   mutation: function* () {
     const content: { value: ContentItem[] } = yield want({ keyword: 'content'});
@@ -195,7 +199,7 @@ const tags: StateAndMutation<{ value: string[] }, void> = {
   }
 }
 
-const categories: StateAndMutation<{ value: string[] }, void> = {
+const categories = {
   state: { value: [] },
   mutation: function* () {
     const content: { value: ContentItem[] } = yield want({ keyword: 'content' });
@@ -207,9 +211,9 @@ const categories: StateAndMutation<{ value: string[] }, void> = {
   }
 }
 
-const post: StateAndMutation<{ value: string, slug: string }, { slug: string }> = {
+const post = {
   state: { value: '', slug: '' },
-  mutation: function* ({ slug }) {
+  mutation: function* ({ slug }: { slug: string }) {
     const content: { value: ContentItem[] } = yield want({ keyword: 'content' });
     const { name } = R.find(R.propEq('slug', slug), content.value) as ContentItem;
     const post = yield call({ fn: fetchPost, params: { name } });
@@ -248,9 +252,9 @@ export class ContextWrapper extends React.PureComponent<{}, ContextWrapperState>
   }
 }
 
-export const withEffect = (component: any) => {
+export const withEffect = (component: (props: FrameProp<{}>) => JSX.Element) => {
   const Alias = component;
-  return function (props: any) {
+  return function (props: FrameProp<{}>) {
     return (
       <ImpureContext.Consumer>
         {context => <Alias run={context.run} store={context.store} {...props}/>}
