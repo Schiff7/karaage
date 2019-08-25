@@ -80,7 +80,7 @@ class Nuts<T extends StateAndMutations<T>> {
     if (!!keyword) {
       const prev = R.prop(keyword, this.store);
       this.store = { ...this.store, [keyword]: { ...prev, ...state } };
-      console.log(this.store);
+      // console.log(this.store);
     }
     this._notify();
   }

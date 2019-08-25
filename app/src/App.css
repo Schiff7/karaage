@@ -156,6 +156,7 @@ nav a {
   width: 99%;
   border-left: 1.5px dashed #323232;
   border-top: 1.5px dashed #323232;
+  perspective: 500px;
 }
 .categories, .tags, .content, .about, .no-match, .loading {
   text-transform: uppercase;

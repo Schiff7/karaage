@@ -1,6 +1,6 @@
 import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch, RouteComponentProps } from 'react-router-dom';
-import { TransitionMotion, spring, TransitionStyle } from 'react-motion';
+import { TransitionMotion, spring, TransitionStyle, presets } from 'react-motion';
 import { Nav, Post, Content, Categories, Tags, About, NoMatch, Loading } from './frames';
 import { ContextWrapper } from './impure';
 import * as R from 'ramda';
@@ -21,8 +21,13 @@ interface Record {
   queue: string[];
   props: RouteComponentProps;
 }
-// Fundamental component
 
+// Global react-motion genSpring config helper;
+const genSpring = (val: number) => {
+  return spring(val, {stiffness: 60, damping: 15});
+}
+
+// Fundamental component
 /**
  * 
  * There are Frames in the Machine.
@@ -41,9 +46,9 @@ interface Record {
  */
 const Machine = () => {
   const views: { [key: string]: { [key: string]: number } } = {
-    main: { left: 1, top: 1 },
-    right: { left: 100, top: 1 },
-    bottom: { left: 1, top: 100 },
+    main: { left: 1, top: 1, scale: 1, rotateX: 0, rotateY: 0 },
+    right: { left: 100, top: 1, scale: 1.25, rotateX: 0, rotateY: 60 },
+    bottom: { left: 1, top: 100, scale: 1.25, rotateX: 60, rotateY: 0 },
     opaque: { opacity: 1 },
     transparent: { opacity: 0 }
   };
@@ -67,8 +72,16 @@ const Machine = () => {
   const { frames, queue } = record;
   // Styles that will be applied before the Frames unmount.
   const willLeave = ({ data: { from, zIndex } }: TransitionStyle) => {
-    const { left, top } = views[from];
-    return { left: spring(left), top: spring(top), opacity: spring(0), zIndex };
+    const { left, top, scale, rotateX, rotateY } = views[from];
+    return { 
+      zIndex, 
+      left: genSpring(left), 
+      top: genSpring(top), 
+      opacity: genSpring(0),
+      scale: genSpring(scale),
+      rotateX: genSpring(rotateX),
+      rotateY: genSpring(rotateY)
+    };
   }
   // Styles that will be applied when Frames mount.
   // Add special key `finished` to predict if the animation has finished, 
@@ -84,7 +97,15 @@ const Machine = () => {
         const { key } = frame;
         const zIndex = queue.indexOf(key);
         const data = R.pipe(R.dissoc('key'), R.merge({zIndex}))(frame);
-        return { key, data, style: { left: spring(1), top: spring(1), opacity: spring(1), finished: spring(1) } };
+        return { key, data, style: { 
+          left: genSpring(1), 
+          top: genSpring(1), 
+          opacity: genSpring(1), 
+          scale: genSpring(1),
+          rotateX: genSpring(0),
+          rotateY: genSpring(0),
+          finished: genSpring(1) 
+        } };
       })
     )(frames);
     return styles as TransitionStyle[];
@@ -128,8 +149,14 @@ const Machine = () => {
       <Switch>{getRoutes()}</Switch>
       <ContextWrapper>
         <TransitionMotion willEnter={willEnter} willLeave={willLeave} styles={getStyles() as TransitionStyle[]}>
-          {styles => <>{styles.map(({ key, data, style: { left, top, opacity, finished } }) => 
-          <section key={key} className={`frame ${key}`} style={{ left: `${left}%`, top: `${top}%`, opacity, zIndex: data.zIndex }}>
+          {styles => <>{styles.map(({ key, data, style: { left, top, opacity, scale, rotateX, rotateY, finished } }) => 
+          <section key={key} className={`frame ${key}`} style={{
+            opacity,
+            zIndex: data.zIndex,
+            left: `${left}%`, 
+            top: `${top}%`, 
+            transform: `scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+          }}>
             {finished < 1 ? <Loading /> : <data.component {...(R.last(queue) === key ? record.props : {})} />}
           </section>)}</>}
         </TransitionMotion>
