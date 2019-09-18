@@ -158,11 +158,11 @@ nav a {
   border-top: 1.5px dashed #323232;
   perspective: 500px;
 }
-.categories, .tags, .content, .about, .no-match, .loading {
+.categories, .tags, .content, .about, .demos, .no-match, .loading {
   text-transform: uppercase;
   font-family: 'Dosis', sans-serif;
 }
-.categories, .tags, .content, .post, .about, .no-match, .loading {
+.categories, .tags, .content, .post, .about, .demos, .no-match, .loading {
   max-width: 1050px;
   margin: 0 auto;
   padding: 10vh 5vw;
