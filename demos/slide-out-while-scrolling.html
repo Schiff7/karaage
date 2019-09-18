@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>DEMO</title>
+  <style>
+    html {
+      font-size: 16px;
+    }
+    .root .placeholder {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin-bottom: 10vh;
+      background-color: #eee;
+    }
+    .bg-black {
+      background-color: black;
+    }
+    .text-box {
+      color: #eee;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+    .box {
+      width: 40vw;
+      height: 30vh;
+      margin: 0 auto 10vh;
+      border-radius: 12px;
+    }
+    [data-slide] {
+      transition: all 1s ease;
+      perspective: 500;
+      -webkit-perspective: 500;
+    }
+    .slide-up-pending {
+      opacity: 0;
+      transform: translate(0, 20vh) scale(1.05) rotateX(-60deg);
+    }
+    .slide-right-pending {
+      opacity: 0;
+      transform: translate(-40vh, 0) scale(1.05) rotateY(-60deg);
+    }
+    .slide-left-pending {
+      opacity: 0;
+      transform: translate(40vh, 0) scale(1.05) rotateY(60deg);
+    }
+    .slide-down-pending {
+      opacity: 0;
+      transform: translate(0, -20vh) scale(1.05) rotateX(60deg);
+    }
+    .slide-fulfilled {
+      opacity: 1;
+      transform: translate(0, 0) scale(1) rotateX(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="root">
+    <div class="placeholder">
+      <article>
+        <h3>Slide Out While Scrolling</h3>
+        <p>Scroll up and down to see the effects.</p>
+        <p>Excercise for <a target="_blank" href="https://rxjs-dev.firebaseapp.com/">rxjs</a>.</p>
+      </article>
+    </div>
+    <div data-slide="up" class="box bg-black"></div>
+    <div data-slide="left" class="box bg-black"></div>
+    <div data-slide="right" class="box bg-black"></div>
+    <div data-slide="down" class="box bg-black"></div>
+    <div data-slide="up" class="box text-box bg-black">
+      <p>
+        Time doth transfix the flourish set on youth <br />
+        And delves the parallels in beauty’s brow, <br />
+        Feeds on the rarities of nature’s truth, <br />
+        And nothing stands but for his scythe to mow
+      </p>
+    </div>
+    <div data-slide="up" class="box bg-black"></div>
+    <div data-slide="up" class="box bg-black"></div>
+    <div data-slide="up" class="box bg-black"></div>
+    <div data-slide="up" class="box bg-black"></div>
+    <div data-slide="up" class="box bg-black"></div>
+  </div>
+  <script type="text/javascript" src="https://unpkg.com/rxjs/bundles/rxjs.umd.min.js"></script>
+  <script>
+    const { fromEvent, from } = rxjs;
+    const { flatMap, throttleTime, startWith } = rxjs.operators;
+    const elements = document.querySelectorAll('[data-slide]');
+    const offsetToWindow = function offsetToWindow (ele, acc) {
+      const parentEle = ele.offsetParent;
+      return !parentEle 
+        ? acc - (document.documentElement.scrollTop || document.body.scrollTop) 
+        : offsetToWindow(parentEle, acc + ele.offsetTop);
+    }
+    fromEvent(document, 'scroll').pipe(
+      startWith('init'),
+      throttleTime(10),
+      flatMap(_ => from(elements))
+    ).subscribe((ele) => {
+      const top = offsetToWindow(ele, 0);
+      const direction = ele.getAttribute('data-slide');
+      const ratio = 0.8;
+      const height = window.innerHeight;
+      const slidePending = `slide-${direction}-pending`;
+      const slideFulfilled = 'slide-fulfilled';
+      if (top > height * ratio && ele.classList.contains(slideFulfilled)) {
+        ele.classList.replace(slideFulfilled, slidePending); return;
+      }
+      if (!ele.classList.contains(slidePending) && !ele.classList.contains(slideFulfilled)) 
+        ele.classList.add(slidePending);
+      if (top <= height * ratio) {
+        ele.classList.replace(slidePending, slideFulfilled); return;
+      }
+    });
+  </script>
+</body>
+</html>
