@@ -1,0 +1,50 @@
+html {
+  font-size: 16px;
+}
+.root .placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin-bottom: 10vh;
+  background-color: #eee;
+}
+.bg-black {
+  background-color: black;
+}
+.text-box {
+  color: #eee;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+.box {
+  width: 40vw;
+  height: 30vh;
+  margin: 0 auto 10vh;
+  border-radius: 12px;
+}
+[data-slide] {
+  transition: all 1s ease;
+  perspective: 500;
+  -webkit-perspective: 500;
+}
+.slide-up-pending {
+  opacity: 0;
+  transform: translate(0, 20vh) scale(1.05) rotateX(-60deg);
+}
+.slide-right-pending {
+  opacity: 0;
+  transform: translate(-40vh, 0) scale(1.05) rotateY(-60deg);
+}
+.slide-left-pending {
+  opacity: 0;
+  transform: translate(40vh, 0) scale(1.05) rotateY(60deg);
+}
+.slide-down-pending {
+  opacity: 0;
+  transform: translate(0, -20vh) scale(1.05) rotateX(60deg);
+}
+.slide-fulfilled {
+  opacity: 1;
+  transform: translate(0, 0) scale(1) rotateX(0);
+}
