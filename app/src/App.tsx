@@ -1,7 +1,7 @@
 import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch, RouteComponentProps } from 'react-router-dom';
-import { TransitionMotion, spring, TransitionStyle, presets } from 'react-motion';
-import { Nav, Post, Content, Categories, Tags, About, NoMatch, Loading } from './frames';
+import { TransitionMotion, spring, TransitionStyle } from 'react-motion';
+import { Nav, Post, Content, Categories, Tags, Demos, About, NoMatch, Loading } from './frames';
 import { ContextWrapper } from './impure';
 import * as R from 'ramda';
 import './App.css';
@@ -59,6 +59,7 @@ const Machine = () => {
       { key: 'frame-content', path: '/posts', exact: true, component: Content, from: 'right', show: false },
       { key: 'frame-categories', path: '/categories', component: Categories, from: 'right', show: false },
       { key: 'frame-tags',path: '/tags', component: Tags, from: 'right', show: false },
+      { key: 'frame-demos',path: '/demos', component: Demos, from: 'right', show: false },
       { key: 'frame-about', path: '/about', component: About, from: 'right', show: false },
       { key: 'frame-post', path: '/posts/:slug', component: Post, from: 'bottom', show: false },
       { key: 'frame-no-match', path: undefined, component: NoMatch, from: 'bottom', show: false },

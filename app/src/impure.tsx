@@ -169,6 +169,12 @@ export enum Status {
 
 axios.defaults.baseURL = 'https://karaage.me';
 
+const fetchDemos = async (): Promise<string[]> => {
+  const response = await axios.get('/api/demos.json');
+  return response.data;
+}
+
+
 const fetchContent = async (): Promise<ContentItem[]> => {
   const response = await axios.get('/api/content.json');
   return response.data;
@@ -221,7 +227,15 @@ const post = {
   }
 }
 
-const ASSETS = { content, tags, categories, post };
+const demos = {
+  state: { value: [] },
+  mutation: function* () {
+    const demos = yield call({ fn: fetchDemos });
+    return push({ state: { value: demos } });
+  }
+}
+
+const ASSETS = { content, tags, categories, demos, post };
 
 const instance = new Nuts(ASSETS);
 

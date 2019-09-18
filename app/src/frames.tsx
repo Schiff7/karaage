@@ -44,6 +44,7 @@ export function Nav () {
         <li><Link className='underline' to='/posts'>POSTS</Link></li>
         <li><Link className='underline' to='/categories'>CATEGORIES</Link></li>
         <li><Link className='underline' to='/tags'>TAGS</Link></li>
+        <li><Link className='underline' to='/demos'>DEMOS</Link></li>
         <li><Link className='underline' to='/about'>ABOUT</Link></li>
       </ul>
     </nav>
@@ -140,6 +141,24 @@ export const Tags = withEffect(function (props: FrameProp<{}>) {
     <MaybeLoading predict={status === Status.SUCCESSFUL}>
       <div className='tags'>
         <ul>{value.map((tag: string) => <li key={tag}><Link className="underline" to={`/posts?tags=${tag}`}>{tag}</Link></li>)}</ul>
+      </div>
+    </MaybeLoading>
+  );
+});
+
+// Demos
+export const Demos = withEffect(function (props: FrameProp<{}>) {
+  const { tags: { value, status } } = props.store;
+  useEffect(() => {
+    if (status === Status.INITIAL) {
+      const { run } = props;
+      run('demos');
+    }
+  }, [status]);
+  return (
+    <MaybeLoading predict={status === Status.SUCCESSFUL}>
+      <div className='demos'>
+        <ul>{value.map((demo: string) => <li key={demo}><Link target="_blank" className="underline" to={`/demos/${demo}`}>{demo}</Link></li>)}</ul>
       </div>
     </MaybeLoading>
   );
