@@ -148,7 +148,7 @@ export const Tags = withEffect(function (props: FrameProp<{}>) {
 
 // Demos
 export const Demos = withEffect(function (props: FrameProp<{}>) {
-  const { tags: { value, status } } = props.store;
+  const { demos: { value, status } } = props.store;
   useEffect(() => {
     if (status === Status.INITIAL) {
       const { run } = props;
