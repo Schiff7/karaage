@@ -2,6 +2,8 @@ import React, { Component, useEffect, useState, ReactElement } from 'react';
 import { Motion, spring, Style } from 'react-motion';
 import { Link, RouteComponentProps } from 'react-router-dom';
 import { withEffect, Status, ContentItem } from './impure';
+import hljs from 'highlight.js';
+import './hljs-github.css';
 
 // Fade out when mounted.
 export class FadeOut extends Component<{}, Style> {
@@ -59,6 +61,11 @@ export const Post = withEffect(function (props: FrameProp<{ slug?: string }>) {
     const { run } = props;
     if (!!slug) run('post', { slug });
   }, [slug, status]);
+  useEffect(() => {
+    document.querySelectorAll('pre code').forEach((block) => {
+      hljs.highlightBlock(block);
+    });
+  })
   return (
     <MaybeLoading predict={status === Status.SUCCESSFUL}>
       <div className='post' dangerouslySetInnerHTML={{ __html: value }}></div>
