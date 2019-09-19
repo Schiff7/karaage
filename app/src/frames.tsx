@@ -65,7 +65,7 @@ export const Post = withEffect(function (props: FrameProp<{ slug?: string }>) {
     document.querySelectorAll('pre code').forEach((block) => {
       hljs.highlightBlock(block);
     });
-  })
+  }, [slug, status]);
   return (
     <MaybeLoading predict={status === Status.SUCCESSFUL}>
       <div className='post' dangerouslySetInnerHTML={{ __html: value }}></div>
