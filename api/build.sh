@@ -46,7 +46,7 @@ files_result="${files_result%,}${suffix}"
 demos_result=${prefix}
 for demo in ${demos}
 do
-  demo="\"${demo}\""
+  demo="\"${demo%.html}\""
   demos_result="${demos_result}\n\t${demo},"
 done
 demos_result="${demos_result%,}${suffix}"

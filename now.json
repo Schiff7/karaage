@@ -10,7 +10,7 @@
   ],
   "routes": [
     { "src": "/data/(.*)", "headers": { "cache-control": "s-maxage=31536000,immutable" }, "dest": "/data/$1" },
-    { "src": "/demos/(.*)", "headers": { "cache-control": "s-maxage=31536000,immutable" }, "dest": "/demos/$1" },
+    { "src": "/demos/(.*)", "headers": { "cache-control": "s-maxage=31536000,immutable" }, "dest": "/demos/$1.html" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/static/(.*)", "headers": { "cache-control": "s-maxage=31536000,immutable" }, "dest": "/app/static/$1" },
     { "src": "/favicon.ico", "dest": "/app/favicon.ico" },

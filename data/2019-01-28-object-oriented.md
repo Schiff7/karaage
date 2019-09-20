@@ -50,8 +50,10 @@ JavaScript可以使用`new`关键字执行构造函数来获得多个类型特�
 function _new(constructor, ...params) {
   // 创建一个空对象。
   const temp = {};
+
   // 执行构造函数。
   constructor.apply(temp, [...params]);
+  
   // 返回新的对象，不考虑构造函数中显式return的情况。
   return temp;
 }
@@ -86,8 +88,10 @@ function _new(constructor, ...params) {
   // 创建一个空对象，并将该空对象的__proto__指向构造函数的prototype
   // Object.create()用于以某个对象为原型对象（即__proto__所指向的）创建新的对象
   const temp = Object.create(constructor.prototype);
+
   // 执行构造函数。
   constructor.apply(temp, [...params]);
+
   // 返回新的对象，不考虑构造函数中显式return的情况。
   return temp;
 }
