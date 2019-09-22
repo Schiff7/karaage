@@ -44,7 +44,7 @@ export function Nav () {
       <h2 className='align-center' data-text='Hello, World!'><span>{'Hello, World!'}</span></h2>
       <ul className='without-list-style align-center cursor-pointer'>
         <li><Link className='underline' to='/posts'>POSTS</Link></li>
-        <li><Link className='underline' to='/categories'>CATEGORIES</Link></li>
+        {/* <li><Link className='underline' to='/categories'>CATEGORIES</Link></li> */}
         <li><Link className='underline' to='/tags'>TAGS</Link></li>
         <li><Link className='underline' to='/demos'>DEMOS</Link></li>
         <li><Link className='underline' to='/about'>ABOUT</Link></li>
